@@ -1,1 +1,3 @@
-"# SFD" 
+## SFD (Sudbury Food Delivery)
+
+Until we find a better name...
