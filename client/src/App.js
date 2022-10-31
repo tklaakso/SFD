@@ -1,6 +1,9 @@
 import React from "react";
 import Cookies from "universal-cookie";
 
+import '@trendmicro/react-sidenav/dist/react-sidenav.css';
+import NavigationBar from "./components/NavigationBar";
+
 const cookies = new Cookies();
 
 class App extends React.Component {
@@ -134,11 +137,14 @@ class App extends React.Component {
 			);
 		}
 		return (
-			<div className="container mt-3">
-				<h1>React Cookie Auth</h1>
-				<p>You are logged in!</p>
-				<button className="btn btn-primary mr-2" onClick={this.whoami}>WhoAmI</button>
-				<button className="btn btn.danger" onClick={this.logout}>Log Out</button>
+			<div>
+				<NavigationBar />
+				<div className="container mt-3">
+					<h1>React Cookie Auth</h1>
+					<p>You are logged in!</p>
+					<button className="btn btn-primary mr-2" onClick={this.whoami}>WhoAmI</button>
+					<button className="btn btn.danger" onClick={this.logout}>Log Out</button>
+				</div>
 			</div>
 		)
 	}
