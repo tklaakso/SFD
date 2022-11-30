@@ -1,1 +1,10 @@
 *.pyc
+simulator/**/*.osm
+simulator/**/*.geojson
+simulator/**/*.pbf
+simulator/**/*.dbf
+simulator/**/*.shp
+simulator/**/*.shx
+simulator/**/*.prj
+simulator/cache/**
+simulator/graph.png
