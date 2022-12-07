@@ -33,11 +33,14 @@ def serve(port, engine):
         conn = listener.accept()
         print('Received connection from ' + str(listener.last_accepted))
         while True:
-            msg = conn.recv()
-            if msg == 'close':
-                print('Connection closed')
+            try:
+                msg = conn.recv()
+                if msg == 'close':
+                    print('Connection closed')
+                    break
+                handle_command(conn, msg, engine)
+            except Exception:
                 break
-            handle_command(conn, msg, engine)
 
 if __name__ == '__main__':
     place = 'Sudbury, Ontario, Canada'
