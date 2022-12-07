@@ -8,3 +8,4 @@ simulator/**/*.shx
 simulator/**/*.prj
 simulator/cache/**
 simulator/graph.png
+geographic_service/cache/**
