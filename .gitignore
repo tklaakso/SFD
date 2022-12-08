@@ -9,3 +9,6 @@ simulator/**/*.prj
 simulator/cache/**
 simulator/graph.png
 geographic_service/cache/**
+geographic_service/geographic.egg-info/**
+geographic_service/build/**
+geographic_service/dist/**
