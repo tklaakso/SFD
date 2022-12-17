@@ -3,18 +3,37 @@ import Cookies from "universal-cookie";
 
 import '@trendmicro/react-sidenav/dist/react-sidenav.css';
 import NavigationBar from "./components/NavigationBar";
+import MenuView from "./components/MenuView";
+
+import styled from 'styled-components';
+
+import isResponseOk from './Utils.js'
+
+import { Helmet } from "react-helmet";
+
+const Main = styled.main`
+    position: relative;
+    overflow: hidden;
+    transition: all .15s;
+    padding: 0 20px;
+    margin-left: ${props => (props.expanded ? 240 : 64)}px;
+`;
 
 const cookies = new Cookies();
 
 class App extends React.Component {
 	constructor(props) {
 		super(props);
+
+		this.navigationMode = "merchant";
 		
 		this.state = {
 			username: "",
 			password: "",
 			error: "",
 			isAuthenticated: false,
+			sidebarExpanded: false,
+			restaurant: null,
 		};
 	}
 	
@@ -64,14 +83,6 @@ class App extends React.Component {
 		this.setState({username : event.target.value});	
 	}
 
-	isResponseOk(response) {
-		if (response.status >= 200 && response.status <= 299) {
-			return response.json();
-		} else {
-			throw Error(response.statusText);
-		}
-	}
-
 	login = (event) => {
 		event.preventDefault();
 		fetch("/accounts/login/", {
@@ -83,7 +94,7 @@ class App extends React.Component {
 			credentials: "same-origin",
 			body: JSON.stringify({username : this.state.username, password : this.state.password}),
 		})
-		.then(this.isResponseOk)
+		.then(isResponseOk)
 		.then((data) => {
 			console.log(data);
 			this.setState({isAuthenticated : true, username : "", password : "", error: ""});
@@ -98,7 +109,7 @@ class App extends React.Component {
 		fetch("/accounts/logout/", {
 			credentials : "same-origin",
 		})
-		.then(this.isResponseOk)
+		.then(isResponseOk)
 		.then((data) => {
 			console.log(data);
 			this.setState({isAuthenticated : false});
@@ -106,6 +117,130 @@ class App extends React.Component {
 		.catch((err) => {
 			console.log(err);
 		});
+	}
+
+	onNavigationSelect = (selected) => {
+		this.navigationMode = selected;
+		this.forceUpdate();
+	}
+
+	onNavigationToggle = (expanded) => {
+		this.setState({sidebarExpanded : expanded});
+		this.forceUpdate();
+	}
+
+	makeRestaurant = (event) => {
+		event.preventDefault();
+		fetch("/restaurants/create/", {
+			method: "POST",
+			headers: {
+				"Content-Type" : "application/json",
+				"X-CSRFToken" : cookies.get("csrftoken"),
+			},
+			credentials: "same-origin",
+			body: JSON.stringify({	"name" : event.target.name.value,
+									"address" : {
+										"street_name" : event.target.street_name.value,
+										"street_num" : event.target.street_num.value,
+										"city" : event.target.city.value,
+										"province" : event.target.province.value,
+										"postal_code" : event.target.postal_code.value,
+									}}),
+		})
+		.then(isResponseOk)
+		.then(() => {
+			this.setState({restaurant: null});
+			this.forceUpdate();
+		})
+		.catch((err) => {
+			console.log(err);
+		});
+	}
+
+	getRestaurant = () => {
+		return fetch("/restaurants/view/", {
+			headers: {
+				"Content-Type" : "application/json",
+			},
+			credentials: "same-origin",
+		})
+		.then(isResponseOk)
+		.then((data) => {
+			this.setState({restaurant: data});
+		})
+		.catch((err) => {
+			console.log(err);
+			this.setState({restaurant: {}});
+		});
+	}
+
+	renderMerchant = () => {
+		if (this.state.restaurant == null) {
+			this.getRestaurant().then(() => {this.forceUpdate()});
+			return <></>;
+		}
+		if (Object.keys(this.state.restaurant).length === 0) {
+			return (
+				<div style={{position: "relative"}}>
+					<form onSubmit={this.makeRestaurant}>
+						<div className="form-group">
+							<label htmlFor="Name">Restaurant Name</label>
+							<input type="text" className="form-control" id="name" name="name" />
+						</div>
+						<div className="form-group">
+							<label htmlFor="Street Name">Street Name</label>
+							<input type="text" className="form-control" id="street_name" name="street_name" />
+						</div>
+						<div className="form-group">
+							<label htmlFor="Street Number">Street Number</label>
+							<input type="text" className="form-control" id="street_num" name="street_num" />
+						</div>
+						<div className="form-group">
+							<label htmlFor="City">City</label>
+							<input type="text" className="form-control" id="city" name="city" />
+						</div>
+						<div className="form-group">
+							<label htmlFor="Province">Province</label>
+							<input type="text" className="form-control" id="province" name="province" />
+						</div>
+						<div className="form-group">
+							<label htmlFor="Postal Code">Postal Code</label>
+							<input type="text" className="form-control" id="postal_code" name="postal_code" />
+						</div>
+						<button type="submit" className="btn btn-primary">Submit</button>
+					</form>
+				</div>
+			);
+		}
+		else {
+			return (
+				<div style={{position: "relative"}}>
+					<h1>{this.state.restaurant.name}</h1>
+					<MenuView></MenuView>
+				</div>
+			);
+		}
+	}
+
+	renderRestaurants = () => {
+		return <></>;
+	}
+
+	renderOrders = () => {
+		return <></>;
+	}
+
+	renderNavigatedPage = () => {
+		switch (this.navigationMode) {
+			case "merchant":
+				return this.renderMerchant();
+			case "restaurants":
+				return this.renderRestaurants();
+			case "orders":
+				return this.renderOrders();
+			default:
+				return <></>;
+		}
 	}
 
 	render() {
@@ -137,16 +272,18 @@ class App extends React.Component {
 			);
 		}
 		return (
-			<div>
-				<NavigationBar />
-				<div className="container mt-3">
-					<h1>React Cookie Auth</h1>
-					<p>You are logged in!</p>
-					<button className="btn btn-primary mr-2" onClick={this.whoami}>WhoAmI</button>
-					<button className="btn btn.danger" onClick={this.logout}>Log Out</button>
+			<body>
+				<NavigationBar onSelect={this.onNavigationSelect} onToggle={this.onNavigationToggle} />
+				<div style={{position: "relative"}}>
+					<Helmet>
+						<style>{"body { background-color: lightgray; }"}</style>
+					</Helmet>
+					<Main expanded={this.state.sidebarExpanded}>
+						{this.renderNavigatedPage()}
+					</Main>
 				</div>
-			</div>
-		)
+			</body>
+		);
 	}
 }
 
