@@ -10,8 +10,6 @@ from menus.models import Menu, MenuItem
 
 from rest_framework import serializers
 
-import uuid
-
 def create(request):
     data = json.loads(request.body)
     name = data.get('name')

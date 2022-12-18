@@ -1,7 +1,10 @@
 import React from 'react';
 
 import Card from 'react-bootstrap/Card';
+import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
+
+import NumericInput from 'react-numeric-input';
 
 import isResponseOk from '../Utils.js';
 
@@ -19,11 +22,13 @@ class RestaurantMenuView extends React.Component {
 		super(props);
         this.state = {
             restaurant: props.restaurant,
+            modalItem: null,
+            orderCount: 1,
         }
 	}
 
     getMenu = () => {
-        return fetch("/restaurants/menu?id=" + this.state.restaurant.uuid, {
+        fetch("/restaurants/menu?id=" + this.state.restaurant.uuid, {
 			credentials: "same-origin",
 		})
         .then(isResponseOk)
@@ -36,17 +41,49 @@ class RestaurantMenuView extends React.Component {
 		});
     }
 
-    onClickItem = () => {
-
+    onClickItem = (item) => {
+        this.setState({modalItem: item});
     }
-	
+
+    handleModalClose = () => {
+        this.setState({modalItem: null, orderCount: 1});
+    }
+
+    handleAddItem = () => {
+        this.setState({modalItem: null, orderCount: 1});
+    }
+
+    onOrderCountChange = (value) => {
+        this.setState({orderCount: Math.max(1, value)});
+    }
+    
+    getPrice = () => {
+        if (this.state.modalItem == null) {
+            return 0;
+        }
+        return this.state.modalItem.price * this.state.orderCount;
+    }
+
 	render() {
         if (this.state.items == null) {
-            this.getMenu().then(() => {this.forceUpdate()});
+            this.getMenu();
             return <></>;
         }
         return (
             <div>
+                <Modal size="fullscreen" show={this.state.modalItem != null} onHide={this.handleModalClose}>
+                    <Modal.Header closeButton>
+                        <Modal.Title>{this.state.modalItem?.name}</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <p>{this.state.modalItem?.description}</p>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button variant="secondary" onClick={this.handleModalClose}>Close</Button>
+                        <NumericInput mobile className="form-control" precision={0} value={this.state.orderCount} onChange={this.onOrderCountChange}></NumericInput>
+                        <Button variant="primary" onClick={this.handleAddItem}>Add (${this.getPrice().toFixed(2)})</Button>
+                    </Modal.Footer>
+                </Modal>
                 {this.state.items.map((item) => <MenuItemView item={item} onClick={this.onClickItem} allowDeletion={false}></MenuItemView>)}
             </div>
         );
@@ -90,7 +127,7 @@ class RestaurantBrowser extends React.Component {
     }
 
     getRestaurants = () => {
-        return fetch("/restaurants/browse/", {
+        fetch("/restaurants/browse/", {
             headers: {
                 "Content-Type" : "application/json",
             },
@@ -99,7 +136,6 @@ class RestaurantBrowser extends React.Component {
         .then(isResponseOk)
         .then((data) => {
             this.setState({restaurants: data.map((restaurant) => new Restaurant(restaurant))});
-            this.forceUpdate();
         })
         .catch((err) => {
             console.log(err);
@@ -108,7 +144,6 @@ class RestaurantBrowser extends React.Component {
 
     viewItems = (restaurant) => {
         this.setState({selectedRestaurant: restaurant, viewingMenu: true});
-        this.forceUpdate();
     }
 
     render() {
@@ -120,7 +155,7 @@ class RestaurantBrowser extends React.Component {
             );
         }
         if (this.state.restaurants == null) {
-            this.getRestaurants().then(() => {this.forceUpdate()});
+            this.getRestaurants();
             return <></>;
         }
         return (

@@ -145,7 +145,7 @@ class MenuView extends React.Component {
 	}
 
     getMenu = () => {
-        return fetch("/menus/view/", {
+        fetch("/menus/view/", {
 			headers: {
 				"Content-Type" : "application/json",
 			},
@@ -194,7 +194,6 @@ class MenuView extends React.Component {
         .then(isResponseOk)
         .then(() => {
             this.setState({addingItem: false, modifiedItem: null, items: null});
-            this.forceUpdate();
         })
         .catch((err) => {
             console.log(err);
@@ -224,7 +223,6 @@ class MenuView extends React.Component {
 
     onAddItem = () => {
         this.setState({addingItem: true});
-        this.forceUpdate();
     }
 
     onSaveMenuItem = (item) => {
@@ -238,7 +236,6 @@ class MenuView extends React.Component {
 
     onModifyItem = (item) => {
         this.setState({addingItem: true, modifiedItem: item});
-        this.forceUpdate();
     }
 	
 	render() {
@@ -249,7 +246,7 @@ class MenuView extends React.Component {
         }
         else {
             if (this.state.items == null) {
-                this.getMenu().then(() => {this.forceUpdate()});
+                this.getMenu();
                 return <></>;
             }
             return (
