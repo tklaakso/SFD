@@ -9,7 +9,7 @@ import isResponseOk from '../Utils.js';
 
 const cookies = new Cookies();
 
-class MenuItem {
+export class MenuItem {
     constructor(props) {
         this.name = props.name;
         this.description = props.description;
@@ -26,13 +26,14 @@ class MenuItem {
     }
 }
 
-class MenuItemView extends React.Component {
+export class MenuItemView extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
             item: props.item,
             onClick: props.onClick,
             onDeleteClick: props.onDeleteClick,
+            allowDeletion: props.allowDeletion,
         };
     }
 
@@ -52,7 +53,7 @@ class MenuItemView extends React.Component {
                     <Card.Body>
                         <Card.Title>{this.state.item.name}</Card.Title>
                         <Card.Text className="text-muted">{this.state.item.description}</Card.Text>
-                        <Button style={{ position: "absolute", right: "30px", top: "50%", transform: "translateY(-50%)" }} variant="danger" onClick={this.onDeleteClick}>Delete</Button>
+                        {this.state.allowDeletion && <Button style={{ position: "absolute", right: "30px", top: "50%", transform: "translateY(-50%)" }} variant="danger" onClick={this.onDeleteClick}>Delete</Button>}
                     </Card.Body>
                 </Card>
             </a>
@@ -60,7 +61,7 @@ class MenuItemView extends React.Component {
     }
 }
 
-class MenuBottomBar extends React.Component {
+export class MenuBottomBar extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -75,7 +76,7 @@ class MenuBottomBar extends React.Component {
     }
 }
 
-class MenuItemEditor extends React.Component {
+export class MenuItemEditor extends React.Component {
     constructor(props) {
         super(props);
         if (props.item == null) {
@@ -253,7 +254,7 @@ class MenuView extends React.Component {
             }
             return (
                 <div>
-                    {this.state.items.map((item) => <MenuItemView item={item} onClick={this.onModifyItem} onDeleteClick={this.deleteItem}></MenuItemView>)}
+                    {this.state.items.map((item) => <MenuItemView item={item} onClick={this.onModifyItem} onDeleteClick={this.deleteItem} allowDeletion={true}></MenuItemView>)}
                     <MenuBottomBar onAdd={this.onAddItem}></MenuBottomBar>
                 </div>
             );

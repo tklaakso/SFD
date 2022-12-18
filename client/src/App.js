@@ -4,6 +4,7 @@ import Cookies from "universal-cookie";
 import '@trendmicro/react-sidenav/dist/react-sidenav.css';
 import NavigationBar from "./components/NavigationBar";
 import MenuView from "./components/MenuView";
+import RestaurantBrowser from "./components/RestaurantBrowser";
 
 import styled from 'styled-components';
 
@@ -223,7 +224,7 @@ class App extends React.Component {
 	}
 
 	renderRestaurants = () => {
-		return <></>;
+		return <RestaurantBrowser></RestaurantBrowser>;
 	}
 
 	renderOrders = () => {

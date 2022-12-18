@@ -6,7 +6,11 @@ import json
 from common.serializers import AddressSerializer
 from common.models import Address
 from restaurants.models import Restaurant
-from menus.models import Menu
+from menus.models import Menu, MenuItem
+
+from rest_framework import serializers
+
+import uuid
 
 def create(request):
     data = json.loads(request.body)
@@ -33,3 +37,30 @@ def view(request):
     if restaurant == None:
         return JsonResponse({'detail' : 'You do not own a restaurant.'}, status = 400)
     return JsonResponse({'name' : restaurant.name})
+
+def browse(request):
+    query = Restaurant.objects.all()
+    restaurant_list = []
+    for restaurant in query:
+        restaurant_list.append({'name' : restaurant.name, 'uuid' : restaurant.uuid})
+    return JsonResponse(restaurant_list, safe = False)
+
+class MenuSerializer(serializers.Serializer):
+    uuid = serializers.UUIDField(required = True)
+
+def menu(request):
+    data = request.GET
+    uuid = data.get('id')
+    if not MenuSerializer(data = {'uuid' : uuid}).is_valid():
+        return JsonResponse({'detail' : 'Validation failed.'}, status = 400)
+    query = Restaurant.objects.filter(uuid = uuid)
+    restaurant = query.first()
+    if restaurant == None:
+        return JsonResponse({'detail' : 'Restaurant with specified ID does not exist.'}, status = 400)
+    menu = restaurant.menu
+    query = MenuItem.objects.filter(menu = menu)
+    item_list = []
+    for item in query:
+        item_list.append({'name' : item.name, 'description' : item.description, 'price' : item.price, 'uuid' : item.uuid})
+    return JsonResponse(item_list, safe = False)
+
