@@ -2,9 +2,10 @@ import React from 'react';
 
 import Cookies from "universal-cookie";
 
-import Card from 'react-bootstrap/Card'
+import Card from 'react-bootstrap/Card';
+import Button from 'react-bootstrap/Button';
 
-import isResponseOk from '../Utils.js'
+import isResponseOk from '../Utils.js';
 
 const cookies = new Cookies();
 
@@ -31,11 +32,17 @@ class MenuItemView extends React.Component {
         this.state = {
             item: props.item,
             onClick: props.onClick,
+            onDeleteClick: props.onDeleteClick,
         };
     }
 
     onClick = () => {
         this.state.onClick(this.state.item);
+    }
+
+    onDeleteClick = (event) => {
+        event.stopPropagation();
+        this.state.onDeleteClick(this.state.item);
     }
 
     render() {
@@ -45,6 +52,7 @@ class MenuItemView extends React.Component {
                     <Card.Body>
                         <Card.Title>{this.state.item.name}</Card.Title>
                         <Card.Text className="text-muted">{this.state.item.description}</Card.Text>
+                        <Button style={{ position: "absolute", right: "30px", top: "50%", transform: "translateY(-50%)" }} variant="danger" onClick={this.onDeleteClick}>Delete</Button>
                     </Card.Body>
                 </Card>
             </a>
@@ -192,6 +200,27 @@ class MenuView extends React.Component {
         });
     }
 
+    deleteItem = (item) => {
+        fetch("/menus/remove/", {
+            method: "POST",
+            headers: {
+                "Content-Type" : "application/json",
+                "X-CSRFToken" : cookies.get("csrftoken"),
+            },
+            credentials: "same-origin",
+            body: JSON.stringify({uuid: item.uuid}),
+        })
+        .then(isResponseOk)
+        .then(() => {
+            this.setState({items: null});
+            this.forceUpdate();
+        })
+        .catch((err) => {
+            console.log(err);
+        });
+    }
+
+
     onAddItem = () => {
         this.setState({addingItem: true});
         this.forceUpdate();
@@ -224,7 +253,7 @@ class MenuView extends React.Component {
             }
             return (
                 <div>
-                    {this.state.items.map((item) => <MenuItemView item={item} onClick={this.onModifyItem}></MenuItemView>)}
+                    {this.state.items.map((item) => <MenuItemView item={item} onClick={this.onModifyItem} onDeleteClick={this.deleteItem}></MenuItemView>)}
                     <MenuBottomBar onAdd={this.onAddItem}></MenuBottomBar>
                 </div>
             );

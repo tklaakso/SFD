@@ -72,16 +72,21 @@ def modify(request):
     item.save()
     return JsonResponse({'detail' : 'Successfully modified menu item.'})
 
+class RemoveFormSerializer(serializers.Serializer):
+    uuid = serializers.UUIDField(required = True)
+
 def remove(request):
     data = json.loads(request.body)
+    if not RemoveFormSerializer(data = data).is_valid():
+        return JsonResponse({'detail' : 'Validation failed.'}, status = 400)
     query = Restaurant.objects.filter(owner = request.user)
     restaurant = query.first()
     if restaurant == None:
         return JsonResponse({'detail' : 'You do not own a restaurant.'}, status = 400)
-    item_id = data.get('id')
+    item_id = data.get('uuid')
     if item_id == None:
         return JsonResponse({'detail' : 'Must specify item ID.'}, status = 400)
-    query = MenuItem.objects.filter(id = item_id)
+    query = MenuItem.objects.filter(uuid = item_id)
     item = query.first()
     if item == None or item.menu != restaurant.menu:
         return JsonResponse({'detail' : 'Item with specified ID does not exist.'}, status = 400)
