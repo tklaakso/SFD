@@ -5,6 +5,8 @@ from django.core import serializers
 from restaurants.models import Restaurant
 from menus.models import MenuItem
 
+from rest_framework import serializers
+
 import json
 
 def view(request):
@@ -18,8 +20,15 @@ def view(request):
         item_list.append({'name' : item.name, 'description' : item.description, 'price' : item.price, 'uuid' : item.uuid})
     return JsonResponse(item_list, safe = False)
 
+class AddFormSerializer(serializers.Serializer):
+    name = serializers.CharField(required = True, max_length = 100)
+    description = serializers.CharField(required = True, max_length = 500)
+    price = serializers.FloatField(required = True)
+
 def add(request):
     data = json.loads(request.body)
+    if not AddFormSerializer(data = data).is_valid():
+        return JsonResponse({'detail' : 'Validation failed.'}, status = 400)
     query = Restaurant.objects.filter(owner = request.user)
     restaurant = query.first()
     if restaurant == None:
@@ -33,8 +42,16 @@ def add(request):
     item.save()
     return JsonResponse({'detail' : 'Successfully created menu item.'})
 
+class ModifyFormSerializer(serializers.Serializer):
+    name = serializers.CharField(required = True, max_length = 100)
+    description = serializers.CharField(required = True, max_length = 500)
+    price = serializers.FloatField(required = True)
+    uuid = serializers.UUIDField(required = True)
+
 def modify(request):
     data = json.loads(request.body)
+    if not ModifyFormSerializer(data = data).is_valid():
+        return JsonResponse({'detail' : 'Validation failed.'}, status = 400)
     query = Restaurant.objects.filter(owner = request.user)
     restaurant = query.first()
     if restaurant == None:
