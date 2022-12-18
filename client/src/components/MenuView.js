@@ -8,20 +8,34 @@ import isResponseOk from '../Utils.js'
 
 const cookies = new Cookies();
 
+class MenuItem {
+    constructor(props) {
+        this.name = props.name;
+        this.description = props.description;
+        this.price = props.price;
+        this.uuid = props.uuid;
+    }
+
+    stringifyProperties = () => {
+        return JSON.stringify({name: this.name, description: this.description, price: this.price});
+    }
+
+    stringifyFull = () => {
+        return JSON.stringify({name: this.name, description: this.description, price: this.price, uuid: this.uuid});
+    }
+}
+
 class MenuItemView extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            name : props.name,
-            description : props.description,
-            price : props.price,
-            uuid: props.uuid,
+            item: props.item,
             onClick: props.onClick,
         };
     }
 
     onClick = () => {
-        this.state.onClick({name: this.state.name, description: this.state.description, price: this.state.price, uuid: this.state.uuid});
+        this.state.onClick(this.state.item);
     }
 
     render() {
@@ -29,8 +43,8 @@ class MenuItemView extends React.Component {
             <a style={{ cursor: "pointer" }} onClick={this.onClick}>
                 <Card className="card-item" style={{ marginBottom: "10px", marginTop: "10px" }}>
                     <Card.Body>
-                        <Card.Title>{this.state.name}</Card.Title>
-                        <Card.Text className="text-muted">{this.state.description}</Card.Text>
+                        <Card.Title>{this.state.item.name}</Card.Title>
+                        <Card.Text className="text-muted">{this.state.item.description}</Card.Text>
                     </Card.Body>
                 </Card>
             </a>
@@ -56,12 +70,24 @@ class MenuBottomBar extends React.Component {
 class MenuItemEditor extends React.Component {
     constructor(props) {
         super(props);
-        this.state = {
-            name : props.name,
-            description : props.description,
-            price : props.price,
-            onSave : props.onSave,
-        };
+        if (props.item == null) {
+            this.state = {
+                name: "",
+                description: "",
+                price: 0,
+                uuid: null,
+                onSave: props.onSave,
+            };
+        }
+        else {
+            this.state = {
+                name: props.item.name,
+                description: props.item.description,
+                price: props.item.price,
+                uuid: props.item.uuid,
+                onSave: props.onSave,
+            };
+        }
     }
 
     handleChange = (event) => {
@@ -75,7 +101,7 @@ class MenuItemEditor extends React.Component {
 
     save = (event) => {
         event.preventDefault();
-        this.state.onSave({name: this.state.name, description: this.state.description, price: this.state.price});
+        this.state.onSave(new MenuItem({name: this.state.name, description: this.state.description, price: this.state.price, uuid: this.state.uuid}));
     }
 
     render() {
@@ -118,7 +144,7 @@ class MenuView extends React.Component {
 		})
         .then(isResponseOk)
 		.then((data) => {
-			this.setState({items: data});
+			this.setState({items: data.map((item) => new MenuItem(item))});
 		})
 		.catch((err) => {
 			console.log(err);
@@ -134,7 +160,7 @@ class MenuView extends React.Component {
                 "X-CSRFToken" : cookies.get("csrftoken"),
             },
             credentials: "same-origin",
-            body: JSON.stringify(item),
+            body: item.stringifyProperties(),
         })
         .then(isResponseOk)
         .then(() => {
@@ -154,7 +180,7 @@ class MenuView extends React.Component {
                 "X-CSRFToken" : cookies.get("csrftoken"),
             },
             credentials: "same-origin",
-            body: JSON.stringify({...item, ...{uuid: this.state.modifiedItem.uuid}}),
+            body: item.stringifyFull(),
         })
         .then(isResponseOk)
         .then(() => {
@@ -187,16 +213,9 @@ class MenuView extends React.Component {
 	
 	render() {
         if (this.state.addingItem) {
-            if (this.state.modifiedItem == null) {
-                return (
-                    <MenuItemEditor name="" description="" price={0} onSave={this.onSaveMenuItem}></MenuItemEditor>
-                );
-            }
-            else {
-                return (
-                    <MenuItemEditor name={this.state.modifiedItem.name} description={this.state.modifiedItem.description} price={this.state.modifiedItem.price} onSave={this.onSaveMenuItem}></MenuItemEditor>
-                );
-            }
+            return (
+                <MenuItemEditor item={this.state.modifiedItem} onSave={this.onSaveMenuItem}></MenuItemEditor>
+            );
         }
         else {
             if (this.state.items == null) {
@@ -205,7 +224,7 @@ class MenuView extends React.Component {
             }
             return (
                 <div>
-                    {this.state.items.map((item) => <MenuItemView name={item.name} description={item.description} uuid={item.uuid} onClick={this.onModifyItem}></MenuItemView>)}
+                    {this.state.items.map((item) => <MenuItemView item={item} onClick={this.onModifyItem}></MenuItemView>)}
                     <MenuBottomBar onAdd={this.onAddItem}></MenuBottomBar>
                 </div>
             );
