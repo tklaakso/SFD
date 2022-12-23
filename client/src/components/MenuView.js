@@ -3,7 +3,7 @@ import React from 'react';
 import Cookies from "universal-cookie";
 
 import Card from 'react-bootstrap/Card';
-import Button from 'react-bootstrap/Button';
+import CloseButton from 'react-bootstrap/CloseButton';
 
 import isResponseOk from '../Utils.js';
 
@@ -53,7 +53,7 @@ export class MenuItemView extends React.Component {
                     <Card.Body>
                         <Card.Title>{this.state.item.name}</Card.Title>
                         <Card.Text className="text-muted">{this.state.item.description}</Card.Text>
-                        {this.state.allowDeletion && <Button style={{ position: "absolute", right: "30px", top: "50%", transform: "translateY(-50%)" }} variant="danger" onClick={this.onDeleteClick}>Delete</Button>}
+                        {this.state.allowDeletion && <CloseButton style={{ position: "absolute", right: "30px", top: "50%", transform: "translateY(-50%)" }} onClick={this.onDeleteClick}></CloseButton>}
                     </Card.Body>
                 </Card>
             </a>

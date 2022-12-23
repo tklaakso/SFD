@@ -5,6 +5,8 @@ import '@trendmicro/react-sidenav/dist/react-sidenav.css';
 import NavigationBar from "./components/NavigationBar";
 import MenuView from "./components/MenuView";
 import RestaurantBrowser from "./components/RestaurantBrowser";
+import CartView, { CartItem } from "./components/CartView";
+import TopBar from "./components/TopBar";
 
 import styled from 'styled-components';
 
@@ -35,6 +37,8 @@ class App extends React.Component {
 			isAuthenticated: false,
 			sidebarExpanded: false,
 			restaurant: null,
+			cartViewOpen: false,
+			cartItems: [],
 		};
 	}
 	
@@ -244,6 +248,30 @@ class App extends React.Component {
 		}
 	}
 
+	updateCartItems = () => {
+        return fetch('/orders/cart/', {
+            headers: {
+                "Content-Type" : "application/json",
+            },
+            credentials: "same-origin",
+        })
+        .then(isResponseOk)
+        .then((items) => {
+            this.setState({cartItems : items.map((item) => new CartItem(item))});
+        })
+        .catch((error) => {
+            console.log(error);
+        });
+    }
+
+	onViewCart = () => {
+		this.updateCartItems().then(() => {this.setState({cartViewOpen: true})});
+	}
+
+	handleCartViewClose = () => {
+		this.setState({cartViewOpen: false});
+	}
+
 	render() {
 		if (!this.state.isAuthenticated) {
 			return (
@@ -274,6 +302,7 @@ class App extends React.Component {
 		}
 		return (
 			<body>
+				<TopBar onViewCart={this.onViewCart}></TopBar>
 				<NavigationBar onSelect={this.onNavigationSelect} onToggle={this.onNavigationToggle} />
 				<div style={{position: "relative"}}>
 					<Helmet>
@@ -283,6 +312,7 @@ class App extends React.Component {
 						{this.renderNavigatedPage()}
 					</Main>
 				</div>
+				<CartView open={this.state.cartViewOpen} items={this.state.cartItems} onClose={this.handleCartViewClose}></CartView>
 			</body>
 		);
 	}

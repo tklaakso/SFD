@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'restaurants.apps.RestaurantsConfig',
     'common.apps.CommonConfig',
     'menus.apps.MenusConfig',
+    'geo.apps.GeoConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

@@ -7,6 +7,7 @@ from common.serializers import AddressSerializer
 from common.models import Address
 from restaurants.models import Restaurant
 from menus.models import Menu, MenuItem
+from geo.models import UserAddress
 
 from rest_framework import serializers
 
@@ -37,6 +38,19 @@ def view(request):
     return JsonResponse({'name' : restaurant.name})
 
 def browse(request):
+    data = json.loads(request.body)
+    if not AddressSerializer(data = data).is_valid():
+        ser = AddressSerializer(data = data)
+        ser.is_valid()
+        print(ser.errors)
+        return JsonResponse({'detail' : 'Invalid address.'}, status = 400)
+    addr = Address(**data)
+    addr.save()
+    query = UserAddress.objects.filter(user = request.user)
+    for item in query:
+        item.address.delete()
+        item.delete()
+    UserAddress(user = request.user, address = addr).save()
     query = Restaurant.objects.all()
     restaurant_list = []
     for restaurant in query:
