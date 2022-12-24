@@ -12,7 +12,7 @@ import Col from 'react-bootstrap/Col';
 
 import NumericInput from 'react-numeric-input';
 
-import isResponseOk from '../Utils.js';
+import { isResponseOk, postJson, getJson } from '../Utils';
 
 import { MenuItem, MenuItemView } from './MenuView';
 
@@ -20,7 +20,7 @@ import Autocomplete from 'react-google-autocomplete';
 
 const cookies = new Cookies();
 
-class Address {
+export class Address {
     constructor (props) {
         this.street_num = props.street_num;
         this.street_name = props.street_name;
@@ -59,35 +59,19 @@ class RestaurantMenuView extends React.Component {
 	}
 
     getMenu = () => {
-        fetch("/restaurants/menu?id=" + this.state.restaurant.uuid, {
-			credentials: "same-origin",
-		})
-        .then(isResponseOk)
-		.then((data) => {
-			this.setState({items: data.map((item) => new MenuItem(item))});
-		})
-		.catch((err) => {
-			console.log(err);
-			this.setState({items: []});
-		});
+        getJson("/restaurants/menu?id=" + this.state.restaurant.uuid,
+        (err) => {
+            this.setState({items: []});
+        })
+        .then((data) => {
+            this.setState({items: data.map((item) => new MenuItem(item))});
+        })
     }
 
     addItem = (item, quantity) => {
-        fetch("/orders/add/", {
-            method: "POST",
-            headers: {
-                "Content-Type" : "application/json",
-                "X-CSRFToken" : cookies.get("csrftoken"),
-            },
-            credentials: "same-origin",
-            body: JSON.stringify({'item' : item.uuid, 'quantity' : quantity}),
-        })
-        .then(isResponseOk)
+        postJson("/orders/add/", {'item' : item.uuid, 'quantity' : quantity})
         .then(() => {
             this.setState({showModal: false});
-        })
-        .catch((err) => {
-            console.log(err);
         });
     }
 
@@ -183,38 +167,19 @@ class RestaurantBrowser extends React.Component {
     }
 
     getRestaurants = () => {
-        fetch("/restaurants/browse/", {
-            method: "POST",
-            headers: {
-                "Content-Type" : "application/json",
-                "X-CSRFToken" : cookies.get("csrftoken"),
-            },
-            credentials: "same-origin",
-            body: JSON.stringify(this.state.address),
-        })
-        .then(isResponseOk)
+        postJson("/restaurants/browse/", this.state.address)
         .then((data) => {
             this.setState({restaurants: data.map((restaurant) => new Restaurant(restaurant))});
-        })
-        .catch((err) => {
-            console.log(err);
         });
     }
 
     getAddress = () => {
-        fetch("/geo/address/", {
-            headers: {
-                "Content-Type" : "application/json",
-            },
-            credentials: "same-origin",
+        getJson("/geo/address/",
+        () => {
+            this.setState({fetchedAddress: true});
         })
-        .then(isResponseOk)
         .then((data) => {
             this.setState({fetchedAddress: true, address: new Address(data)});
-        })
-        .catch((err) => {
-            this.setState({fetchedAddress: true});
-            console.log(err);
         });
     }
 
@@ -248,7 +213,7 @@ class RestaurantBrowser extends React.Component {
                     break;
             }
         }
-        this.setState({address: new Address(addr_props)});
+        this.setState({restaurants: null, address: new Address(addr_props)});
     }
 
     render() {

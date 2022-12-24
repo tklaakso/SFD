@@ -5,7 +5,7 @@ import Cookies from "universal-cookie";
 import Card from 'react-bootstrap/Card';
 import CloseButton from 'react-bootstrap/CloseButton';
 
-import isResponseOk from '../Utils.js';
+import { isResponseOk, postJson, getJson } from '../Utils';
 
 const cookies = new Cookies();
 
@@ -17,12 +17,12 @@ export class MenuItem {
         this.uuid = props.uuid;
     }
 
-    stringifyProperties = () => {
-        return JSON.stringify({name: this.name, description: this.description, price: this.price});
+    getProperties = () => {
+        return {name: this.name, description: this.description, price: this.price};
     }
 
-    stringifyFull = () => {
-        return JSON.stringify({name: this.name, description: this.description, price: this.price, uuid: this.uuid});
+    getFull = () => {
+        return {name: this.name, description: this.description, price: this.price, uuid: this.uuid};
     }
 }
 
@@ -145,78 +145,33 @@ class MenuView extends React.Component {
 	}
 
     getMenu = () => {
-        fetch("/menus/view/", {
-			headers: {
-				"Content-Type" : "application/json",
-			},
-			credentials: "same-origin",
-		})
-        .then(isResponseOk)
-		.then((data) => {
-			this.setState({items: data.map((item) => new MenuItem(item))});
-		})
-		.catch((err) => {
-			console.log(err);
-			this.setState({items: []});
-		});
+        getJson("/menus/view/",
+        () => {
+            this.setState({items: []});
+        })
+        .then((data) => {
+            this.setState({items: data.map((item) => new MenuItem(item))});
+        });
     }
 
     addItem = (item) => {
-        fetch("/menus/add/", {
-            method: "POST",
-            headers: {
-                "Content-Type" : "application/json",
-                "X-CSRFToken" : cookies.get("csrftoken"),
-            },
-            credentials: "same-origin",
-            body: item.stringifyProperties(),
-        })
-        .then(isResponseOk)
+        postJson("/menus/add/", item.getProperties())
         .then(() => {
             this.setState({addingItem: false, items: null});
-            this.forceUpdate();
-        })
-        .catch((err) => {
-            console.log(err);
         });
     }
 
     modifyItem = (item) => {
-        fetch("/menus/modify/", {
-            method: "POST",
-            headers: {
-                "Content-Type" : "application/json",
-                "X-CSRFToken" : cookies.get("csrftoken"),
-            },
-            credentials: "same-origin",
-            body: item.stringifyFull(),
-        })
-        .then(isResponseOk)
+        postJson("/menus/modify/", item.getFull())
         .then(() => {
             this.setState({addingItem: false, modifiedItem: null, items: null});
-        })
-        .catch((err) => {
-            console.log(err);
         });
     }
 
     deleteItem = (item) => {
-        fetch("/menus/remove/", {
-            method: "POST",
-            headers: {
-                "Content-Type" : "application/json",
-                "X-CSRFToken" : cookies.get("csrftoken"),
-            },
-            credentials: "same-origin",
-            body: JSON.stringify({uuid: item.uuid}),
-        })
-        .then(isResponseOk)
+        postJson("/menus/remove/", {uuid: item.uuid})
         .then(() => {
             this.setState({items: null});
-            this.forceUpdate();
-        })
-        .catch((err) => {
-            console.log(err);
         });
     }
 

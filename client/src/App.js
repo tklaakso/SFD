@@ -7,10 +7,11 @@ import MenuView from "./components/MenuView";
 import RestaurantBrowser from "./components/RestaurantBrowser";
 import CartView, { CartItem } from "./components/CartView";
 import TopBar from "./components/TopBar";
+import OrdersView from "./components/OrdersView";
 
 import styled from 'styled-components';
 
-import isResponseOk from './Utils.js'
+import { isResponseOk, postJson, getJson } from './Utils';
 
 import { Helmet } from "react-helmet";
 
@@ -47,10 +48,7 @@ class App extends React.Component {
 	}
 	
 	getSession = () => {
-		fetch("/accounts/session/", {
-			credentials: "same-origin",
-		})
-		.then((res) => res.json())
+		getJson("/accounts/session/")
 		.then((data) => {
 			console.log(data);
 			if (data.isAuthenticated) {
@@ -58,25 +56,13 @@ class App extends React.Component {
 			} else {
 				this.setState({isAuthenticated: false});
 			}
-		})
-		.catch((err) => {
-			console.log(err);
 		});
 	}
 	
 	whoami = () => {
-		fetch("/accounts/whoami/", {
-			headers: {
-				"Content-Type" : "application/json",
-			},
-			credentials: "same-origin",
-		})
-		.then((res) => res.json())
+		getJson("/accounts/whoami/")
 		.then((data) => {
-			console.log("You are logged in as: " + data.username)
-		})
-		.catch((err) => {
-			console.log(err);
+			console.log("You are logged in as: " + data.username);
 		});
 	}
 
@@ -90,37 +76,21 @@ class App extends React.Component {
 
 	login = (event) => {
 		event.preventDefault();
-		fetch("/accounts/login/", {
-			method: "POST",
-			headers: {
-				"Content-Type" : "application/json",
-				"X-CSRFToken" : cookies.get("csrftoken"),
-			},
-			credentials: "same-origin",
-			body: JSON.stringify({username : this.state.username, password : this.state.password}),
+		postJson("/accounts/login/", {username : this.state.username, password : this.state.password},
+		(err) => {
+			this.setState({error: "Wrong username or password."});
 		})
-		.then(isResponseOk)
 		.then((data) => {
 			console.log(data);
 			this.setState({isAuthenticated : true, username : "", password : "", error: ""});
-		})
-		.catch((err) => {
-			console.log(err);
-			this.setState({error: "Wrong username or password."});
 		});
 	}
 
 	logout = () => {
-		fetch("/accounts/logout/", {
-			credentials : "same-origin",
-		})
-		.then(isResponseOk)
+		getJson("/accounts/logout/")
 		.then((data) => {
 			console.log(data);
 			this.setState({isAuthenticated : false});
-		})
-		.catch((err) => {
-			console.log(err);
 		});
 	}
 
@@ -136,46 +106,28 @@ class App extends React.Component {
 
 	makeRestaurant = (event) => {
 		event.preventDefault();
-		fetch("/restaurants/create/", {
-			method: "POST",
-			headers: {
-				"Content-Type" : "application/json",
-				"X-CSRFToken" : cookies.get("csrftoken"),
-			},
-			credentials: "same-origin",
-			body: JSON.stringify({	"name" : event.target.name.value,
-									"address" : {
-										"street_name" : event.target.street_name.value,
-										"street_num" : event.target.street_num.value,
-										"city" : event.target.city.value,
-										"province" : event.target.province.value,
-										"postal_code" : event.target.postal_code.value,
-									}}),
-		})
-		.then(isResponseOk)
+		postJson("/restaurants/create/",
+		{"name" : event.target.name.value,
+		"address" : {
+			"street_name" : event.target.street_name.value,
+			"street_num" : event.target.street_num.value,
+			"city" : event.target.city.value,
+			"province" : event.target.province.value,
+			"postal_code" : event.target.postal_code.value,
+		}})
 		.then(() => {
 			this.setState({restaurant: null});
 			this.forceUpdate();
-		})
-		.catch((err) => {
-			console.log(err);
 		});
 	}
 
 	getRestaurant = () => {
-		return fetch("/restaurants/view/", {
-			headers: {
-				"Content-Type" : "application/json",
-			},
-			credentials: "same-origin",
+		return getJson("/restaurants/view/",
+		() => {
+			this.setState({restaurant: {}});
 		})
-		.then(isResponseOk)
 		.then((data) => {
 			this.setState({restaurant: data});
-		})
-		.catch((err) => {
-			console.log(err);
-			this.setState({restaurant: {}});
 		});
 	}
 
@@ -232,7 +184,7 @@ class App extends React.Component {
 	}
 
 	renderOrders = () => {
-		return <></>;
+		return <OrdersView></OrdersView>;
 	}
 
 	renderNavigatedPage = () => {
@@ -249,19 +201,10 @@ class App extends React.Component {
 	}
 
 	updateCartItems = () => {
-        return fetch('/orders/cart/', {
-            headers: {
-                "Content-Type" : "application/json",
-            },
-            credentials: "same-origin",
-        })
-        .then(isResponseOk)
-        .then((items) => {
-            this.setState({cartItems : items.map((item) => new CartItem(item))});
-        })
-        .catch((error) => {
-            console.log(error);
-        });
+		return getJson("/orders/cart/")
+		.then((items) => {
+			this.setState({cartItems : items.map((item) => new CartItem(item))});
+		});
     }
 
 	onViewCart = () => {

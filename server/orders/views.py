@@ -2,6 +2,8 @@ from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 
 from menus.models import MenuItem
+from financial.utils import calculate_price
+from geo.models import UserAddress
 from .models import CartMenuItemQuantity, OrderMenuItemQuantity, Cart, Order
 
 import json
@@ -79,10 +81,25 @@ def place(request):
     items = cart.items()
     if items.count() == 0:
         return JsonResponse({'detail' : 'Cannot place order with empty cart.'}, status = 400)
-    order = Order(order_time = time)
+    restaurants = list({item.item.menu.restaurant for item in items})
+    price = calculate_price(items)
+    address = UserAddress.objects.filter(user = request.user).first()
+    if not address:
+        return JsonResponse({'detail' : 'You do not have an active delivery address.'}, status = 400)
+    order = Order(order_time = time, owner = request.user, price = price, address = address.address)
+    order.save()
+    for restaurant in restaurants:
+        order.restaurants.add(restaurant)
     order.save()
     for item in items:
         order_item = OrderMenuItemQuantity(order = order, item = item.item, quantity = item.quantity)
         order_item.save()
         item.delete()
     return JsonResponse({'detail' : 'Successfully placed order.'})
+
+def view_all(request):
+    query = Order.objects.filter(owner = request.user)
+    order_list = []
+    for order in query:
+        order_list.append({'uuid' : order.uuid, 'time' : order.order_time, 'restaurants' : [restaurant.name for restaurant in order.restaurants.all()], 'price' : order.price, 'address' : order.address.serialize()})
+    return JsonResponse(order_list, safe = False)

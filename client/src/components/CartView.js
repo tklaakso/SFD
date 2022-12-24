@@ -13,7 +13,7 @@ import Form from 'react-bootstrap/Form';
 
 import CloseButton from 'react-bootstrap/CloseButton';
 
-import isResponseOk from '../Utils';
+import { isResponseOk, postJson, getJson } from '../Utils';
 
 const cookies = new Cookies();
 
@@ -60,21 +60,10 @@ class CartView extends React.Component {
     }
 
     placeOrder = () => {
-        fetch("/orders/place/", {
-            method: "POST",
-            headers: {
-                "Content-Type" : "application/json",
-                "X-CSRFToken" : cookies.get("csrftoken"),
-            },
-            credentials: "same-origin",
-            body: JSON.stringify({'time' : new Date(this.state.orderTime)}),
-        })
-        .then(isResponseOk)
+        postJson("/orders/place/", {'time' : new Date(this.state.orderTime)})
         .then(() => {
             this.setState({checkoutModalOpen: false, open: false});
-        })
-        .catch((err) => {
-            console.log(err);
+            this.state.onClose();
         });
     }
 

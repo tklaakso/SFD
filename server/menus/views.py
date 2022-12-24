@@ -23,7 +23,7 @@ def view(request):
 class AddFormSerializer(serializers.Serializer):
     name = serializers.CharField(required = True, max_length = 100)
     description = serializers.CharField(required = True, max_length = 500)
-    price = serializers.FloatField(required = True)
+    price = serializers.DecimalField(required = True, max_digits = 10, decimal_places = 2)
 
 def add(request):
     data = json.loads(request.body)
@@ -45,7 +45,7 @@ def add(request):
 class ModifyFormSerializer(serializers.Serializer):
     name = serializers.CharField(required = True, max_length = 100)
     description = serializers.CharField(required = True, max_length = 500)
-    price = serializers.FloatField(required = True)
+    price = serializers.DecimalField(required = True, max_digits = 10, decimal_places = 2)
     uuid = serializers.UUIDField(required = True)
 
 def modify(request):

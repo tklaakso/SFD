@@ -48,7 +48,6 @@ def browse(request):
     addr.save()
     query = UserAddress.objects.filter(user = request.user)
     for item in query:
-        item.address.delete()
         item.delete()
     UserAddress(user = request.user, address = addr).save()
     query = Restaurant.objects.all()
