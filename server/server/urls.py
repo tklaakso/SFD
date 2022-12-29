@@ -24,4 +24,5 @@ urlpatterns = [
     path('restaurants/', include('restaurants.urls')),
     path('menus/', include('menus.urls')),
     path('geo/', include('geo.urls')),
+    path('driver/', include('driver.urls')),
 ]

@@ -13,5 +13,5 @@ class MenuItem(models.Model):
     uuid = models.UUIDField('uuid', default = uuid.uuid4, editable = False)
     menu = models.ForeignKey(Menu, on_delete = models.CASCADE, blank = True, null = True)
     name = models.CharField('name', max_length = 100)
-    description = models.CharField('description', max_length = 500)
+    description = models.CharField('description', max_length = 500, default = '', blank = True)
     price = models.DecimalField(max_digits = 10, decimal_places = 2, default = Decimal('0.00'))

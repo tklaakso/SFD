@@ -1,0 +1,39 @@
+<restaurant>
+	<name>7 Star Dumpling House</name>
+	<address>
+		<street_name>Regent Street</street_name>
+		<street_num>1355</street_num>
+		<city>Sudbury</city>
+		<province>Ontario</province>
+		<country>Canada</country>
+		<postal_code>P3E 3Z1</postal_code>
+	</address>
+	<items>
+		<item>
+			<name>Pork and Chive House Dumpling</name>
+			<price>10.34</price>
+		</item>
+		<item>
+			<name>Beef Fried Dumpling (12 pcs)</name>
+			<price>14.94</price>
+		</item>
+		<item>
+			<name>Hot and Sour Soup</name>
+			<price>7.46</price>
+		</item>
+		<item>
+			<name>Steamed Bun Stuffed with Pork (6 pcs)</name>
+			<price>10.34</price>
+		</item>
+		<item>
+			<name>Hot Spicy Sichuan Style Chicken</name>
+			<description>Spicy.</description>
+			<price>21.84</price>
+		</item>
+		<item>
+			<name>Kung Bao Shrimp</name>
+			<description>Spicy.</description>
+			<price>20.69</price>
+		</item>
+	</items>
+</restaurant>

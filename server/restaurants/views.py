@@ -7,9 +7,11 @@ from common.serializers import AddressSerializer
 from common.models import Address
 from restaurants.models import Restaurant
 from menus.models import Menu, MenuItem
-from geo.models import UserAddress
+from geo.models import UserAddress, Location
 
 from rest_framework import serializers
+
+from geographic.interface import GeographicInterface
 
 def create(request):
     data = json.loads(request.body)
@@ -24,11 +26,26 @@ def create(request):
         return JsonResponse({'detail' : 'Invalid address.'}, status = 400)
     addr = Address(**address)
     addr.save()
-    restaurant = Restaurant(name = name, address = addr, owner = request.user)
+    with GeographicInterface() as inter:
+        latlng = inter.geocode(str(addr))
+    if not latlng:
+        return JsonResponse({'detail' : 'We couldn\'t geocode your address.'}, status = 400)
+    location_data = {'latitude' : latlng[0], 'longitude' : latlng[1]}
+    location = Location(**location_data)
+    location.save()
+    restaurant = Restaurant(name = name, address = addr, owner = request.user, location = location)
     restaurant.save()
     menu = Menu(restaurant = restaurant)
     menu.save()
     return JsonResponse({'detail' : 'Successfully created restaurant.'})
+
+def delete(request):
+    query = Restaurant.objects.filter(owner = request.user)
+    restaurant = query.first()
+    if not restaurant:
+        return JsonResponse({'detail' : 'You do not own a restaurant'}, status = 400)
+    restaurant.delete()
+    return JsonResponse({'detail' : 'Restaurant deleted successfully.'})
 
 def view(request):
     query = Restaurant.objects.filter(owner = request.user)
@@ -46,10 +63,17 @@ def browse(request):
         return JsonResponse({'detail' : 'Invalid address.'}, status = 400)
     addr = Address(**data)
     addr.save()
+    with GeographicInterface() as inter:
+        latlng = inter.geocode(str(addr))
+    if not latlng:
+        return JsonResponse({'detail' : 'We couldn\'t geocode your address.'}, status = 400)
+    location_data = {'latitude' : latlng[0], 'longitude' : latlng[1]}
+    location = Location(**location_data)
+    location.save()
     query = UserAddress.objects.filter(user = request.user)
     for item in query:
         item.delete()
-    UserAddress(user = request.user, address = addr).save()
+    UserAddress(user = request.user, address = addr, location = location).save()
     query = Restaurant.objects.all()
     restaurant_list = []
     for restaurant in query:

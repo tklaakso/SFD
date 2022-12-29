@@ -22,7 +22,7 @@ def view(request):
 
 class AddFormSerializer(serializers.Serializer):
     name = serializers.CharField(required = True, max_length = 100)
-    description = serializers.CharField(required = True, max_length = 500)
+    description = serializers.CharField(required = False, max_length = 500, allow_blank = True)
     price = serializers.DecimalField(required = True, max_digits = 10, decimal_places = 2)
 
 def add(request):
@@ -35,6 +35,8 @@ def add(request):
         return JsonResponse({'detail' : 'You do not own a restaurant.'}, status = 400)
     name = data.get('name')
     description = data.get('description')
+    if not description:
+        description = ''
     price = data.get('price')
     if name == None or description == None or price == None:
         return JsonResponse({'detail' : 'Missing one or more essential fields.'}, status = 400)
@@ -44,7 +46,7 @@ def add(request):
 
 class ModifyFormSerializer(serializers.Serializer):
     name = serializers.CharField(required = True, max_length = 100)
-    description = serializers.CharField(required = True, max_length = 500)
+    description = serializers.CharField(required = False, max_length = 500, allow_blank = True)
     price = serializers.DecimalField(required = True, max_digits = 10, decimal_places = 2)
     uuid = serializers.UUIDField(required = True)
 
@@ -58,6 +60,8 @@ def modify(request):
         return JsonResponse({'detail' : 'You do not own a restaurant.'}, status = 400)
     name = data.get('name')
     description = data.get('description')
+    if not description:
+        description = ''
     price = data.get('price')
     uuid = data.get('uuid')
     if name == None or description == None or price == None or uuid == None:

@@ -1,0 +1,40 @@
+<restaurant>
+	<name>Okinawa Sushi (Lasalle Blvd.)</name>
+	<address>
+		<street_name>Lasalle Blvd</street_name>
+		<street_num>798</street_num>
+		<city>Sudbury</city>
+		<province>Ontario</province>
+		<country>Canada</country>
+		<postal_code>P3A 4V4</postal_code>
+	</address>
+	<items>
+		<item>
+			<name>Spring Rolls (6 pcs)</name>
+			<description>One order comes with six spring rolls.</description>
+			<price>6.99</price>
+		</item>
+		<item>
+			<name>Salmon Teriyaki and Mixed Vegetables</name>
+			<description>All teriyaki dishes are served with steamed rice and mixed vegetables.</description>
+			<price>15.99</price>
+		</item>
+		<item>
+			<name>Eel Rice</name>
+			<price>13.99</price>
+		</item>
+		<item>
+			<name>Chicken Lo Mein</name>
+			<price>12.99</price>
+		</item>
+		<item>
+			<name>Sesame Chicken</name>
+			<price>13.99</price>
+		</item>
+		<item>
+			<name>Sushi Party Tray (42 pcs)</name>
+			<description>Salmon, tai, surf clam, crab stick, egg, and inari sushi. One order comes with forty-two pieces.</description>
+			<price>49.99</price>
+		</item>
+	</items>
+</restaurant>

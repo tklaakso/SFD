@@ -4,7 +4,42 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_POST
 
+from django.contrib.auth.models import User
+
+from rest_framework import serializers
+
 import json
+
+class SignupSerializer(serializers.Serializer):
+    username = serializers.CharField(required = True, max_length = 50)
+    password = serializers.CharField(required = True, max_length = 50)
+
+@require_POST
+def signup(request):
+    data = json.loads(request.body)
+    if not SignupSerializer(data = data).is_valid():
+        return JsonResponse({'detail' : 'Validation failed.'}, status = 400)
+    username = data.get('username')
+    password = data.get('password')
+    if User.objects.filter(username = username).first():
+        return JsonResponse({'detail' : 'Username is already taken.'}, status = 400)
+    User.objects.create_user(username = username, password = password).save()
+    return JsonResponse({'detail' : 'Successfully signed up.'})
+
+class DeleteSerializer(serializers.Serializer):
+    password = serializers.CharField(required = True, max_length = 50)
+
+@require_POST
+def delete(request):
+    data = json.loads(request.body)
+    if not DeleteSerializer(data = data).is_valid():
+        return JsonResponse({'detail' : 'Validation failed.'}, status = 400)
+    password = data.get('password')
+    user = authenticate(username = request.user.username, password = password)
+    if not user:
+        return JsonResponse({'detail' : 'Invalid password.'}, status = 400)
+    user.delete()
+    return JsonResponse({'detail' : 'Successfully deleted account.'})
 
 @require_POST
 def login_view(request):

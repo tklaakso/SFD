@@ -1,0 +1,43 @@
+<restaurant>
+	<name>Tandoori Tastes</name>
+	<address>
+		<street_name>Larch Street</street_name>
+		<street_num>96</street_num>
+		<city>Sudbury</city>
+		<province>Ontario</province>
+		<country>Canada</country>
+		<postal_code>P3E 1C1</postal_code>
+	</address>
+	<items>
+		<item>
+			<name>Channa Bhatura</name>
+			<description>Curried chick peas cooked with chopped onions and fresh herbs.</description>
+			<price>10.70</price>
+		</item>
+		<item>
+			<name>Shahi Paneer</name>
+			<description>Shahi paneer comes with raita, your choice of rice or naan, and a pop.</description>
+			<price>11.99</price>
+		</item>
+		<item>
+			<name>Vegetable Samosa</name>
+			<description>Deep-fried cone pastry stuffed with potatoes, and green peas.</description>
+			<price>5.99</price>
+		</item>
+		<item>
+			<name>Chicken Soup</name>
+			<description>Boneless chicken cooked in a wok with fresh herbs.</description>
+			<price>7.59</price>
+		</item>
+		<item>
+			<name>Chicken Korma</name>
+			<description>Stewed chicken cooked with traditional spices and crushed coconut and cashews.</description>
+			<price>20.50</price>
+		</item>
+		<item>
+			<name>Malai Kofta</name>
+			<description>Ground vegetables formed, fried, and cooked in a creamy tomato-based curry.</description>
+			<price>17.50</price>
+		</item>
+	</items>
+</restaurant>

@@ -1,0 +1,37 @@
+<restaurant>
+	<name>Rose Apple Asian Cuisine</name>
+	<address>
+		<street_name>Paris Street</street_name>
+		<street_num>1875</street_num>
+		<city>Sudbury</city>
+		<province>Ontario</province>
+		<country>Canada</country>
+		<postal_code>P3E 3C5</postal_code>
+	</address>
+	<items>
+		<item>
+			<name>Takoyaki (6 pcs)</name>
+			<price>8.95</price>
+		</item>
+		<item>
+			<name>Salmon Salad</name>
+			<price>9.95</price>
+		</item>
+		<item>
+			<name>Curry Pad Thai</name>
+			<price>18.95</price>
+		</item>
+		<item>
+			<name>Tai Sushi (2 pcs)</name>
+			<price>4.25</price>
+		</item>
+		<item>
+			<name>Crabmeat Hand Roll</name>
+			<price>3.95</price>
+		</item>
+		<item>
+			<name>Spicy White Tuna Roll</name>
+			<price>10.95</price>
+		</item>
+	</items>
+</restaurant>

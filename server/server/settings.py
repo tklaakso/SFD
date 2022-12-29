@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'common.apps.CommonConfig',
     'menus.apps.MenusConfig',
     'geo.apps.GeoConfig',
+    'financial.apps.FinancialConfig',
+    'driver.apps.DriverConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

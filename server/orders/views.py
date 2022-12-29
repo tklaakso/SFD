@@ -5,6 +5,7 @@ from menus.models import MenuItem
 from financial.utils import calculate_price
 from geo.models import UserAddress
 from .models import CartMenuItemQuantity, OrderMenuItemQuantity, Cart, Order
+from driver.selection import on_place_order
 
 import json
 
@@ -86,7 +87,7 @@ def place(request):
     address = UserAddress.objects.filter(user = request.user).first()
     if not address:
         return JsonResponse({'detail' : 'You do not have an active delivery address.'}, status = 400)
-    order = Order(order_time = time, owner = request.user, price = price, address = address.address)
+    order = Order(order_time = time, owner = request.user, price = price, address = address.address, location = address.location)
     order.save()
     for restaurant in restaurants:
         order.restaurants.add(restaurant)
@@ -95,7 +96,22 @@ def place(request):
         order_item = OrderMenuItemQuantity(order = order, item = item.item, quantity = item.quantity)
         order_item.save()
         item.delete()
+    on_place_order(order)
     return JsonResponse({'detail' : 'Successfully placed order.'})
+
+class CancelFormSerializer(serializers.Serializer):
+    uuid = serializers.UUIDField(required = True)
+
+def cancel(request):
+    data = json.loads(request.body)
+    if not CancelFormSerializer(data = data).is_valid():
+        return JsonResponse({'detail' : 'Validation failed.'}, status = 400)
+    uuid = data.get('uuid')
+    order = Order.objects.filter(uuid = uuid, owner = request.user).first()
+    if not order:
+        return JsonResponse({'detail' : 'Order with specified UUID does not exist.'}, status = 400)
+    order.delete()
+    return JsonResponse({'detail' : 'Successfully cancelled order.'})
 
 def view_all(request):
     query = Order.objects.filter(owner = request.user)

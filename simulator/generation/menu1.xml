@@ -1,0 +1,43 @@
+<restaurant>
+	<name>Kinhao Sushi</name>
+	<address>
+		<street_name>Algonquin Road</street_name>
+		<street_num>21-2040</street_num>
+		<city>Sudbury</city>
+		<province>Ontario</province>
+		<country>Canada</country>
+		<postal_code>P3E 4Z6</postal_code>
+	</address>
+	<items>
+		<item>
+			<name>Avocado Salad</name>
+			<description>Avocado salad</description>
+			<price>4.50</price>
+		</item>
+		<item>
+			<name>Mushroom Tempura</name>
+			<description>Mushroom tempura</description>
+			<price>7.95</price>
+		</item>
+		<item>
+			<name>Tuna Sashimi</name>
+			<description>Tuna sashimi</description>
+			<price>6.50</price>
+		</item>
+		<item>
+			<name>Salmon Sushi</name>
+			<description>Salmon sushi</description>
+			<price>3.65</price>
+		</item>
+		<item>
+			<name>Rainbow Roll</name>
+			<description>Rainbow roll</description>
+			<price>11.69</price>
+		</item>
+		<item>
+			<name>Spicy Chicken Teriyaki Bento Box</name>
+			<description>Served with 3 pcs Gyoza; 4 pcs Vegetable Tempura; 2 pcs Shrimp Tempura; 6 pcs California Roll; Mixed Vegetable</description>
+			<price>28.99</price>
+		</item>
+	</items>
+</restaurant>

@@ -1,0 +1,37 @@
+<restaurant>
+	<name>My Thai Palace Thai Cuisine</name>
+	<address>
+		<street_name>Notre Dame Avenue</street_name>
+		<street_num>893</street_num>
+		<city>Sudbury</city>
+		<province>Ontario</province>
+		<country>Canada</country>
+		<postal_code>P3E 4Z6</postal_code>
+	</address>
+	<items>
+		<item>
+			<name>Crab Rangoon</name>
+			<price>9.95</price>
+		</item>
+		<item>
+			<name>Pumpkin Soup</name>
+			<price>7.95</price>
+		</item>
+		<item>
+			<name>Pad Thai</name>
+			<price>18.95</price>
+		</item>
+		<item>
+			<name>Seafood Fried Rice</name>
+			<price>22.95</price>
+		</item>
+		<item>
+			<name>Peanut Curry</name>
+			<price>18.95</price>
+		</item>
+		<item>
+			<name>Jasmine Rice</name>
+			<price>2.50</price>
+		</item>
+	</items>
+</restaurant>

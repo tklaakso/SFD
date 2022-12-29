@@ -114,6 +114,7 @@ class App extends React.Component {
 			"city" : event.target.city.value,
 			"province" : event.target.province.value,
 			"postal_code" : event.target.postal_code.value,
+			"country" : "Canada",
 		}})
 		.then(() => {
 			this.setState({restaurant: null});
@@ -127,7 +128,9 @@ class App extends React.Component {
 			this.setState({restaurant: {}});
 		})
 		.then((data) => {
-			this.setState({restaurant: data});
+			if (data) {
+				this.setState({restaurant: data});
+			}
 		});
 	}
 
