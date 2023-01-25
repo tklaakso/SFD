@@ -21,8 +21,25 @@ def to_screen_coords(bbox, resolution, latlng):
     relative_y = (lat - south) / (north - south)
     return (width * relative_x, height * (1 - relative_y))
 
+def get_end_time(order):
+    end_time = datetime.datetime.strptime(order['order_time'], '%Y-%m-%dT%H:%M:%S')
+    t1_end = (end_time.hour * 60 + end_time.minute) * 60
+    return t1_end
+
+def get_destination_node(order):
+    loc = order['location']
+    n1 = (loc['latitude'], loc['longitude'])
+    return n1
+
+def get_restaurant_node(order):
+    restaurant = order['restaurants'][0]
+    loc = restaurant['location']
+    n1 = (loc['latitude'], loc['longitude'])
+    return n1
+
 class Driver:
     def __init__(self, index, pos):
+        self.color = 'red'
         self.orders = []
         self.start_pos = pos
         self.index = index
@@ -31,20 +48,19 @@ class Driver:
     def get_recommended_orders(self):
         return get_recommended(self.session)
     def offer_order(self, order):
-        loc = order['location']
-        n1 = (loc['latitude'], loc['longitude'])
         uuid = order['uuid']
-        end_time = datetime.datetime.strptime(order['order_time'], '%Y-%m-%dT%H:%M:%S')
-        t1_end = (end_time.hour * 60 + end_time.minute) * 60
-        if self.order_accepted(n1, t1_end):
+        if self.order_accepted(order):
             accept_order(self.session, uuid)
             return True
         else:
             decline_order(self.session, uuid)
             return False
-    def order_accepted(self, n1, t1_end):
+    def order_accepted(self, order):
         prev_order_idx = None
         next_order_idx = None
+        dest = get_destination_node(order)
+        rest = get_restaurant_node(order)
+        t1_end = get_end_time(order)
         for i, (n2, t2_start, t2_end, route) in enumerate(self.orders):
             if t2_end < t1_end:
                 prev_order_idx = i
@@ -53,29 +69,53 @@ class Driver:
                 break
         start = self.start_pos
         if prev_order_idx != None:
-            start = self.orders[prev_order_idx][0]
-        route = interface.route(start, n1)
-        t1_start = t1_end - get_route_estimated_time(route, driver_speed)
+            start = self.orders[prev_order_idx]['data']['destination_node']
+        route1 = interface.route(start, rest)
+        route2 = interface.route(rest, dest)
+        delivery_time = get_route_estimated_time(route2, driver_speed)
+        t1_start = t1_end - (get_route_estimated_time(route1, driver_speed) + delivery_time)
         if prev_order_idx != None:
-            if self.orders[prev_order_idx][2] > t1_start:
+            if self.orders[prev_order_idx]['data']['end_time'] > t1_start:
                 return False
         if next_order_idx != None:
-            n2, _, t2_end, _ = self.orders[next_order_idx]
-            next_route = interface.route(n1, n2)
-            t2_start = t2_end - get_route_estimated_time(next_route, driver_speed)
+            n2, t2_end = self.orders[next_order_idx]['restaurant_node'], self.orders[next_order_idx]['end_time']
+            next_route = interface.route(dest, n2)
+            restaurant_to_destination = self.orders[next_order_idx]['restaurant_to_destination']
+            t2_start = t2_end - (get_route_estimated_time(next_route, driver_speed) + get_route_estimated_time(restaurant_to_destination, driver_speed))
             if t2_start < t1_end:
                 return False
-            self.orders[next_order_idx] = (n2, t2_start, t2_end, next_route)
+            self.orders[next_order_idx]['data']['start_time'] = t2_start
+            self.orders[next_order_idx]['data']['start_to_restaurant'] = next_route
         insert_pos = 0
         if prev_order_idx != None:
             insert_pos = prev_order_idx + 1
-        self.orders.insert(insert_pos, (n1, t1_start, t1_end, route))
+        data = {}
+        data['start_to_restaurant'] = route1
+        data['restaurant_to_destination'] = route2
+        data['start_time'] = t1_start
+        data['destination_node'] = dest
+        data['restaurant_node'] = rest
+        data['collection_time'] = t1_end - delivery_time
+        data['end_time'] = t1_end
+        order['data'] = data
+        self.orders.insert(insert_pos, order)
         return True
     def get_position(self, t):
+        self.color = 'red'
         position = self.start_pos
-        for n1, t1_start, t1_end, route in self.orders:
-            if t1_start < t < t1_end:
-                return get_route_pos(route, driver_speed, t - t1_start)
+        for order in self.orders:
+            n1 = order['data']['destination_node']
+            t1_start = order['data']['start_time']
+            t1_end = order['data']['end_time']
+            collection_time = order['data']['collection_time']
+            route1 = order['data']['start_to_restaurant']
+            route2 = order['data']['restaurant_to_destination']
+            if t1_start < t < collection_time:
+                self.color = 'yellow'
+                return get_route_pos(route1, driver_speed, t - t1_start)
+            elif collection_time <= t < t1_end:
+                self.color = 'green'
+                return get_route_pos(route2, driver_speed, t - collection_time)
             elif t1_end <= t:
                 position = n1
             elif t1_start > t:
@@ -140,6 +180,7 @@ def animation_loop(window, canvas,xinc,yinc):
             driver = drivers[i]
             ball = driver_balls[i]
             canvas.moveto(ball, *to_screen_coords(bounding_box, dim, driver.get_position(time_elapsed)))
+            canvas.itemconfig(ball, fill = driver.color, outline = driver.color)
         window.update()
         time.sleep(animation_refresh_seconds)
 
