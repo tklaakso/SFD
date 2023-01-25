@@ -5,7 +5,7 @@ from menus.models import MenuItem
 from financial.utils import calculate_price
 from geo.models import UserAddress
 from .models import CartMenuItemQuantity, OrderMenuItemQuantity, Cart, Order
-from driver.selection import on_place_order
+from driver.selection import on_place_order, update as driver_selection_update
 
 import json
 
@@ -119,3 +119,12 @@ def view_all(request):
     for order in query:
         order_list.append({'uuid' : order.uuid, 'time' : order.order_time, 'restaurants' : [restaurant.name for restaurant in order.restaurants.all()], 'price' : order.price, 'address' : order.address.serialize()})
     return JsonResponse(order_list, safe = False)
+
+def reset(request):
+    query = Order.objects.all()
+    for order in query:
+        order.driver_recommended.clear()
+        order.driver_accepted.clear()
+        order.driver_declined.clear()
+    driver_selection_update()
+    return JsonResponse({'detail' : 'Successfully reset orders.'})

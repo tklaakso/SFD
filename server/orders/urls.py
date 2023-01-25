@@ -8,4 +8,5 @@ urlpatterns = [
     path('place/', views.place, name='place'),
     path('cancel/', views.cancel, name='cancel'),
     path('view_all/', views.view_all, name='view_all'),
+    path('reset/', views.reset, name='reset'),
 ]

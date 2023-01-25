@@ -24,7 +24,7 @@ def recommended(request):
     if not driver:
         return JsonResponse({'detail' : 'You are not a driver.'}, status = 400)
     order_list = []
-    for order in driver.recommended:
+    for order in driver.recommended.all():
         order_list.append(order.serialize())
     return JsonResponse(order_list, safe = False)
 

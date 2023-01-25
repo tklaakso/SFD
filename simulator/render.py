@@ -3,9 +3,11 @@ import networkx as nx
 import tkinter
 import time
 import random
+import datetime
 from PIL import Image, ImageTk
 from geographic.interface import GeographicInterface
 from geographic.utils import *
+from server_interface import *
 
 def node_pos(n):
     node = nodes[n]
@@ -20,10 +22,27 @@ def to_screen_coords(bbox, resolution, latlng):
     return (width * relative_x, height * (1 - relative_y))
 
 class Driver:
-    def __init__(self, pos):
+    def __init__(self, index, pos):
         self.orders = []
         self.start_pos = pos
-    def offer_order(self, n1, t1_end):
+        self.index = index
+        self.session = new_session()
+        login_driver(self.session, index)
+    def get_recommended_orders(self):
+        return get_recommended(self.session)
+    def offer_order(self, order):
+        loc = order['location']
+        n1 = (loc['latitude'], loc['longitude'])
+        uuid = order['uuid']
+        end_time = datetime.datetime.strptime(order['order_time'], '%Y-%m-%dT%H:%M:%S')
+        t1_end = (end_time.hour * 60 + end_time.minute) * 60
+        if self.order_accepted(n1, t1_end):
+            accept_order(self.session, uuid)
+            return True
+        else:
+            decline_order(self.session, uuid)
+            return False
+    def order_accepted(self, n1, t1_end):
         prev_order_idx = None
         next_order_idx = None
         for i, (n2, t2_start, t2_end, route) in enumerate(self.orders):
@@ -62,6 +81,8 @@ class Driver:
             elif t1_start > t:
                 break
         return position
+    def leave(self):
+        logout(self.session)
 
 def create_animation_window():
     window = tkinter.Tk()
@@ -78,18 +99,25 @@ def create_animation_canvas(window):
 
 def animation_loop(window, canvas,xinc,yinc):
     dim = (animation_window_width, animation_window_height)
-    start_time = time.time()
     pil_image = Image.open('graph.png').resize(dim)
     img = ImageTk.PhotoImage(pil_image)
     canvas.create_image(0, 0, image = img, anchor = 'nw')
     list_nodes = list(nodes)
-    drivers = [Driver(node_pos(random.choice(list_nodes)[0])) for _ in range(10)]
+    drivers = [Driver(i, node_pos(random.choice(list_nodes)[0])) for i in range(100)]
     driver_balls = []
-    orders = [(node_pos(random.choice(list_nodes)[0]), random.randint(day_begin, day_end)) for _ in range(100)]
-    for order in orders:
+    #orders = [(node_pos(random.choice(list_nodes)[0]), random.randint(day_begin, day_end)) for _ in range(100)]
+    declined_order = True
+    while declined_order:
+        declined_order = False
         for driver in drivers:
-            if driver.offer_order(*order):
-                break
+            orders = driver.get_recommended_orders()
+            for order in orders:
+                declined_order = declined_order or not driver.offer_order(order)
+    #for order in orders:
+    #    for driver in drivers:
+    #        if driver.offer_order(*order):
+    #            break
+    simulator_session = new_session()
     for driver in drivers:
         start_latlng = driver.start_pos
         start_x, start_y = to_screen_coords(bounding_box, dim, start_latlng)
@@ -99,8 +127,15 @@ def animation_loop(window, canvas,xinc,yinc):
                                     start_y + animation_ball_radius,
                                     fill="red", outline="red", width=4)
         driver_balls.append(ball)
+    day_finished = False
+    start_time = time.time()
     while True:
-        time_elapsed = (time.time() - start_time) * 100
+        time_elapsed = day_begin + (time.time() - start_time) * 1000
+        if not day_finished and time_elapsed > day_end:
+            day_finished = True
+            for driver in drivers:
+                driver.leave()
+            reset_orders(simulator_session)
         for i in range(len(drivers)):
             driver = drivers[i]
             ball = driver_balls[i]
@@ -130,8 +165,8 @@ if __name__ == '__main__':
     north += padding_ns
     bounding_box = (west, south, east, north)
 
-    day_begin = 0
-    day_end = 8 * (60**2)
+    day_begin = 8 * (60**2)
+    day_end = 17 * (60**2)
 
     driver_speed = 60
 
