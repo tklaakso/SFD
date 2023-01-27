@@ -19,6 +19,7 @@ class Cart(models.Model):
         return CartMenuItemQuantity.objects.filter(cart = self)
 
 class Order(models.Model):
+    active = models.BooleanField(default = True)
     owner = models.ForeignKey(User, on_delete = models.CASCADE, blank = True, null = True)
     uuid = models.UUIDField('uuid', default = uuid.uuid4, editable = False)
     restaurants = models.ManyToManyField(Restaurant)

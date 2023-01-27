@@ -74,7 +74,7 @@ def browse(request):
     for item in query:
         item.delete()
     UserAddress(user = request.user, address = addr, location = location).save()
-    query = Restaurant.objects.all()
+    query = Restaurant.objects.filter(active = True)
     restaurant_list = []
     for restaurant in query:
         restaurant_list.append({'name' : restaurant.name, 'uuid' : restaurant.uuid})

@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from orders.models import Order
 
 class Driver(models.Model):
+    active = models.BooleanField(default = True)
     user = models.ForeignKey(User, on_delete = models.CASCADE, blank = True, null = True)
     accepted = models.ManyToManyField(Order, related_name = 'driver_accepted')
     declined = models.ManyToManyField(Order, related_name = 'driver_declined')
@@ -24,5 +25,8 @@ class Driver(models.Model):
     def recommend(self, order):
         order.driver_accepted.clear()
         self.recommended.add(order)
+    
+    def serialize(self):
+        return {'name' : self.user.username}
 
 from .selection import on_accept_order, on_decline_order

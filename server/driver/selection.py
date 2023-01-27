@@ -10,9 +10,9 @@ lock = threading.Lock()
 
 def update():
     update_lock.acquire()
-    query = Order.objects.filter(driver_recommended__isnull = True, driver_accepted__isnull = True)
+    query = Order.objects.filter(active = True, driver_recommended__isnull = True, driver_accepted__isnull = True)
     for order in query:
-        drivers = Driver.objects.exclude(declined__in = [order]).annotate(num_accepted = Count('accepted'), num_recommended = Count('recommended')).order_by('num_accepted', 'num_recommended')
+        drivers = Driver.objects.filter(active = True).exclude(declined__in = [order]).annotate(num_accepted = Count('accepted'), num_recommended = Count('recommended')).order_by('num_accepted', 'num_recommended')
         driver = drivers.first()
         if driver == None:
             continue

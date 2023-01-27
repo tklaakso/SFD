@@ -6,6 +6,7 @@ from geo.models import Location
 import uuid
 
 class Restaurant(models.Model):
+    active = models.BooleanField(default = True)
     name = models.CharField('name', max_length = 100)
     address = models.ForeignKey(Address, on_delete = models.CASCADE, blank = True, null = True)
     location = models.ForeignKey(Location, on_delete = models.CASCADE, blank = True, null = True)

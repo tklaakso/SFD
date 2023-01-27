@@ -21,7 +21,7 @@ if __name__ == '__main__':
                 menus.append(xmltodict.parse(file.read())['restaurant'])
     if args[1] == 'generate':
         if accounts:
-            for i in range(100):
+            for i in range(1000):
                 print('Generating driver ' + str(i))
                 generate_driver(i)
                 print('Generating customer ' + str(i))
@@ -33,12 +33,14 @@ if __name__ == '__main__':
                 print('Making restaurant ' + menu['name'])
                 generate_restaurant(i, menu)
         if orders:
-            for i in range(100):
+            addresses = set()
+            for i in range(1000):
                 print('Generating order ' + str(i))
-                generate_order(i)
+                address = generate_order(i, addresses)
+                addresses.add(address)
     elif args[1] == 'clear':
         if orders:
-            for i in range(100):
+            for i in range(1000):
                 print('Deleting order ' + str(i))
                 delete_order(i)
         if restaurants:
@@ -46,7 +48,7 @@ if __name__ == '__main__':
                 print('Deleting restaurant ' + str(i))
                 delete_restaurant(i)
         if accounts:
-            for i in range(100):
+            for i in range(1000):
                 print('Deleting driver ' + str(i))
                 delete_driver(i)
                 print('Deleting customer ' + str(i))

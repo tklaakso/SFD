@@ -6,6 +6,8 @@ from financial.utils import calculate_price
 from geo.models import UserAddress
 from .models import CartMenuItemQuantity, OrderMenuItemQuantity, Cart, Order
 from driver.selection import on_place_order, update as driver_selection_update
+from driver.models import Driver
+from restaurants.models import Restaurant
 
 import json
 
@@ -120,11 +122,46 @@ def view_all(request):
         order_list.append({'uuid' : order.uuid, 'time' : order.order_time, 'restaurants' : [restaurant.name for restaurant in order.restaurants.all()], 'price' : order.price, 'address' : order.address.serialize()})
     return JsonResponse(order_list, safe = False)
 
+def activate(objects, data):
+    mode = data.get('mode')
+    if mode == 'all':
+        items = objects.all()
+    else:
+        number = data.get('num')
+        if mode == 'sequential':
+            items = objects.all()[:number]
+        elif mode == 'randomized':
+            items = objects.order_by('?')[:number]
+    for item in items:
+        item.active = True
+        item.save()
+    return items
+
 def reset(request):
+    data = json.loads(request.body)
     query = Order.objects.all()
     for order in query:
         order.driver_recommended.clear()
         order.driver_accepted.clear()
         order.driver_declined.clear()
+        order.active = False
+        order.save()
+    query = Driver.objects.all()
+    for driver in query:
+        driver.active = False
+        driver.save()
+    query = Restaurant.objects.all()
+    for restaurant in query:
+        restaurant.active = False
+        restaurant.save()
+    order_data = data.get('orders')
+    driver_data = data.get('drivers')
+    restaurant_data = data.get('restaurants')
+    order_items = activate(Order.objects, order_data)
+    driver_items = activate(Driver.objects, driver_data)
+    restaurant_items = activate(Restaurant.objects, restaurant_data)
+    drivers = []
+    for driver in driver_items:
+        drivers.append(driver.serialize())
     driver_selection_update()
-    return JsonResponse({'detail' : 'Successfully reset orders.'})
+    return JsonResponse({'detail' : 'Successfully reset orders.', 'info' : {'drivers' : drivers}})

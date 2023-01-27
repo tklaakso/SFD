@@ -18,6 +18,9 @@ def login_merchant(session, i):
 def login_driver(session, i):
     session.post(server_addr + 'accounts/login/', json = {'username' : 'Driver' + str(i), 'password' : 'password'}, headers = {'X-CSRFToken' : session.cookies['csrftoken']})
 
+def login_driver_by_name(session, name):
+    session.post(server_addr + 'accounts/login/', json = {'username' : name, 'password' : 'password'}, headers = {'X-CSRFToken' : session.cookies['csrftoken']})
+
 def get_restaurants(session, address):
     response = session.post(server_addr + 'restaurants/browse/', json = address, headers = {'X-CSRFToken' : session.cookies['csrftoken']})
     return response.json()
@@ -62,8 +65,9 @@ def driver_signup(session):
 def delete_account(session):
     session.post(server_addr + 'accounts/delete/', json = {'password' : 'password'}, headers = {'X-CSRFToken' : session.cookies['csrftoken']})
 
-def reset_orders(session):
-    session.post(server_addr + 'orders/reset/', headers = {'X-CSRFToken' : session.cookies['csrftoken']})
+def reset_simulator(session, data):
+    response = session.post(server_addr + 'orders/reset/', json = data, headers = {'X-CSRFToken' : session.cookies['csrftoken']})
+    return response.json()
 
 def generate_driver(i):
     session = new_session()
@@ -119,12 +123,16 @@ def delete_restaurant(i):
     session.post(server_addr + 'restaurants/delete/', headers = {'X-CSRFToken' : session.cookies['csrftoken']})
     logout(session)
 
-def generate_order(i):
+def generate_order(i, chosen_addresses):
     session = new_session()
     login_customer(session, i)
     with GeographicInterface() as inter:
         address = inter.random_address()
-    print('Generated customer address ' + address['street_num'] + ' ' + address['street_name'] + ', ' + address['city'] + ', ' + address['province'] + ', ' + address['country'] + ', ' + address['postal_code'])
+        address_name = address['street_num'] + ' ' + address['street_name'] + ', ' + address['city'] + ', ' + address['province'] + ', ' + address['country'] + ', ' + address['postal_code']
+        while address_name in chosen_addresses:
+            address = inter.random_address()
+            address_name = address['street_num'] + ' ' + address['street_name'] + ', ' + address['city'] + ', ' + address['province'] + ', ' + address['country'] + ', ' + address['postal_code']
+    print('Generated customer address ' + address_name)
     restaurants = get_restaurants(session, address)
     restaurant = random.choice(restaurants)
     print('Chose restaurant ' + restaurant['name'])
@@ -137,10 +145,9 @@ def generate_order(i):
         add_item(session, item['uuid'])
     now = datetime.datetime.now()
     order_time = datetime.datetime(year = now.year, month = now.month, day = now.day, hour = random.randint(9, 16), minute = random.randint(0, 59))
-    print('ORDER TIME')
-    print(order_time)
     place_order(session, str(order_time))
     logout(session)
+    return address_name
 
 def delete_order(i):
     session = new_session()

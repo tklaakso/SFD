@@ -1,0 +1,10 @@
+section params
+	drivers 10 sequential
+	orders 100 randomized
+	restaurants all
+
+section externals
+	require order_price
+
+section finance
+	fee 0.1 * order_price from restaurant to company

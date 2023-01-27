@@ -4,10 +4,12 @@ import tkinter
 import time
 import random
 import datetime
+import os
 from PIL import Image, ImageTk
 from geographic.interface import GeographicInterface
 from geographic.utils import *
 from server_interface import *
+from config import SimulatorConfig
 
 def node_pos(n):
     node = nodes[n]
@@ -38,13 +40,13 @@ def get_restaurant_node(order):
     return n1
 
 class Driver:
-    def __init__(self, index, pos):
+    def __init__(self, name, pos):
         self.color = 'red'
         self.orders = []
         self.start_pos = pos
-        self.index = index
+        self.name = name
         self.session = new_session()
-        login_driver(self.session, index)
+        login_driver_by_name(self.session, name)
     def get_recommended_orders(self):
         return get_recommended(self.session)
     def offer_order(self, order):
@@ -138,12 +140,15 @@ def create_animation_canvas(window):
     return canvas
 
 def animation_loop(window, canvas,xinc,yinc):
+    simulator_session = new_session()
+    response = reset_simulator(simulator_session, config.config)
+    selected_drivers = response['info']['drivers']
     dim = (animation_window_width, animation_window_height)
     pil_image = Image.open('graph.png').resize(dim)
     img = ImageTk.PhotoImage(pil_image)
     canvas.create_image(0, 0, image = img, anchor = 'nw')
     list_nodes = list(nodes)
-    drivers = [Driver(i, node_pos(random.choice(list_nodes)[0])) for i in range(100)]
+    drivers = [Driver(driver['name'], node_pos(random.choice(list_nodes)[0])) for driver in selected_drivers]
     driver_balls = []
     #orders = [(node_pos(random.choice(list_nodes)[0]), random.randint(day_begin, day_end)) for _ in range(100)]
     declined_order = True
@@ -157,7 +162,6 @@ def animation_loop(window, canvas,xinc,yinc):
     #    for driver in drivers:
     #        if driver.offer_order(*order):
     #            break
-    simulator_session = new_session()
     for driver in drivers:
         start_latlng = driver.start_pos
         start_x, start_y = to_screen_coords(bounding_box, dim, start_latlng)
@@ -175,7 +179,6 @@ def animation_loop(window, canvas,xinc,yinc):
             day_finished = True
             for driver in drivers:
                 driver.leave()
-            reset_orders(simulator_session)
         for i in range(len(drivers)):
             driver = drivers[i]
             ball = driver_balls[i]
@@ -185,6 +188,10 @@ def animation_loop(window, canvas,xinc,yinc):
         time.sleep(animation_refresh_seconds)
 
 if __name__ == '__main__':
+    config = SimulatorConfig()
+    with open('generation/main.info', 'r') as file:
+        content = file.read()
+    config.parse(content)
     ox.config(log_console=True, use_cache=True)
     place = 'Sudbury, Ontario, Canada'
     mode = 'drive'
