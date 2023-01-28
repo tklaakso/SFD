@@ -36,6 +36,7 @@ class Order(models.Model):
         return {
             'uuid' : self.uuid,
             'order_time' : self.order_time,
+            'price' : self.price,
             'address' : self.address.serialize(),
             'location' : self.location.serialize(),
             'restaurants' : [restaurant.serialize() for restaurant in self.restaurants.all()],

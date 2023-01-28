@@ -3,6 +3,9 @@ import pyparsing
 from pyparsing import pyparsing_common
 from pyparsing import Word, alphas, Suppress, Forward, ZeroOrMore, oneOf, Group, Keyword
 from pyparsing.results import ParseResults
+import locale
+
+locale.setlocale(locale.LC_ALL, '')
 
 class Expression:
     def __init__(self, tokens):
@@ -109,14 +112,15 @@ class SimulatorConfig:
         self.expression_parser = self.generate_expression_parser()
         self.financial_parser = self.generate_financial_parser()
         self.externals_parser = self.generate_externals_parser()
-        self.externals = {'order_price'}
+        self.externals = {'order_price', 'order_distance'}
         self.state = {}
-        self.entities = {'government' : 0, 'consumer' : 0, 'restaurant' : 0, 'driver' : 0, 'company' : 0}
+        self.entities = {'government' : 0, 'consumer' : 0, 'restaurant' : 0, 'driver' : 0, 'company' : 0, 'gas' : 0}
         self.config = {}
         self.config_commands = []
         self.externals_commands = []
         self.financial_commands = []
         self.required_externals = set()
+        self.run_count = 0
     def generate_externals_parser(self):
         externals_parser = Suppress('require') + Word(alphas + '_')
         externals_parser.add_parse_action(External)
@@ -184,6 +188,18 @@ class SimulatorConfig:
         for command in self.externals_commands:
             self.required_externals.add(command.eval())
     def run(self, externals):
+        self.run_count += 1
         state_dict = dict(self.state, **{k : v for k, v in externals.items() if k in self.required_externals})
         for command in self.financial_commands:
             command.eval(state_dict, self.entities)
+    def print_stats(self):
+        print('Number of orders: ' + str(self.run_count))
+        padding = max(len(x) for x in self.entities.keys()) + 5
+        print('')
+        print('Total revenue:')
+        for k, v in self.entities.items():
+            print('\t' + k + ' ' * (padding - len(k)) + locale.currency(v))
+        print('')
+        print('Orderly revenue:')
+        for k, v in self.entities.items():
+            print('\t' + k + ' ' * (padding - len(k)) + locale.currency(v / self.run_count))

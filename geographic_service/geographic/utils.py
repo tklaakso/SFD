@@ -19,6 +19,14 @@ def get_route_estimated_time(route, speed):
         total_time += (dist / speed) * 60**2
     return total_time
 
+def get_route_distance(route):
+    pairs = zip(route[:-1], route[1:])
+    total_distance = 0
+    for a, b in pairs:
+        dist = geographical_distance(a, b)
+        total_distance += dist
+    return total_distance
+
 def get_route_pos(route, speed, t, speed_multiplier = 1):
     distance = speed * (t / (60**2)) * speed_multiplier
     total_distance = 0

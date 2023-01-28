@@ -53,6 +53,9 @@ class Driver:
         uuid = order['uuid']
         if self.order_accepted(order):
             accept_order(self.session, uuid)
+            distance1 = get_route_distance(order['data']['start_to_restaurant'])
+            distance2 = get_route_distance(order['data']['restaurant_to_destination'])
+            config.run({'order_price' : float(order['price']), 'order_distance' : distance1 + distance2})
             return True
         else:
             decline_order(self.session, uuid)
@@ -63,7 +66,8 @@ class Driver:
         dest = get_destination_node(order)
         rest = get_restaurant_node(order)
         t1_end = get_end_time(order)
-        for i, (n2, t2_start, t2_end, route) in enumerate(self.orders):
+        for i, order2 in enumerate(self.orders):
+            t2_end = order2['data']['end_time']
             if t2_end < t1_end:
                 prev_order_idx = i
             elif t2_end > t1_end:
@@ -80,9 +84,9 @@ class Driver:
             if self.orders[prev_order_idx]['data']['end_time'] > t1_start:
                 return False
         if next_order_idx != None:
-            n2, t2_end = self.orders[next_order_idx]['restaurant_node'], self.orders[next_order_idx]['end_time']
+            n2, t2_end = self.orders[next_order_idx]['data']['restaurant_node'], self.orders[next_order_idx]['data']['end_time']
             next_route = interface.route(dest, n2)
-            restaurant_to_destination = self.orders[next_order_idx]['restaurant_to_destination']
+            restaurant_to_destination = self.orders[next_order_idx]['data']['restaurant_to_destination']
             t2_start = t2_end - (get_route_estimated_time(next_route, driver_speed) + get_route_estimated_time(restaurant_to_destination, driver_speed))
             if t2_start < t1_end:
                 return False
@@ -179,6 +183,7 @@ def animation_loop(window, canvas,xinc,yinc):
             day_finished = True
             for driver in drivers:
                 driver.leave()
+            config.print_stats()
         for i in range(len(drivers)):
             driver = drivers[i]
             ball = driver_balls[i]
