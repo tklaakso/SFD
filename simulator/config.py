@@ -192,7 +192,7 @@ class SimulatorConfig:
         state_dict = dict(self.state, **{k : v for k, v in externals.items() if k in self.required_externals})
         for command in self.financial_commands:
             command.eval(state_dict, self.entities)
-    def print_stats(self):
+    def print_stats(self, num_drivers):
         print('Number of orders: ' + str(self.run_count))
         padding = max(len(x) for x in self.entities.keys()) + 5
         print('')
@@ -203,3 +203,6 @@ class SimulatorConfig:
         print('Orderly revenue:')
         for k, v in self.entities.items():
             print('\t' + k + ' ' * (padding - len(k)) + locale.currency(v / self.run_count))
+        print('')
+        print('Per driver:')
+        print('\t' + 'driver' + ' ' * (padding - len('driver')) + locale.currency(self.entities['driver'] / num_drivers))

@@ -6,8 +6,9 @@ from financial.utils import calculate_price
 from geo.models import UserAddress
 from .models import CartMenuItemQuantity, OrderMenuItemQuantity, Cart, Order
 from driver.selection import on_place_order, update as driver_selection_update
-from driver.models import Driver
+from driver.models import Driver, DriverOrder
 from restaurants.models import Restaurant
+from geo.utils import make_route
 
 import json
 
@@ -89,7 +90,8 @@ def place(request):
     address = UserAddress.objects.filter(user = request.user).first()
     if not address:
         return JsonResponse({'detail' : 'You do not have an active delivery address.'}, status = 400)
-    order = Order(order_time = time, owner = request.user, price = price, address = address.address, location = address.location)
+    restaurant_to_destination = make_route(restaurants[0].location, address.location)
+    order = Order(order_time = time, owner = request.user, price = price, address = address.address, location = address.location, restaurant_to_destination = restaurant_to_destination)
     order.save()
     for restaurant in restaurants:
         order.restaurants.add(restaurant)
@@ -141,11 +143,11 @@ def reset(request):
     data = json.loads(request.body)
     query = Order.objects.all()
     for order in query:
-        order.driver_recommended.clear()
-        order.driver_accepted.clear()
-        order.driver_declined.clear()
         order.active = False
         order.save()
+    query = DriverOrder.objects.all()
+    for driver_order in query:
+        driver_order.delete()
     query = Driver.objects.all()
     for driver in query:
         driver.active = False

@@ -1,6 +1,6 @@
 section params
-	drivers 10 sequential
-	orders 100 randomized
+	drivers 100 sequential
+	orders 1000 randomized
 	restaurants all
 
 section externals
@@ -14,7 +14,7 @@ section finance
 	
 	fee 0.1 * order_price from restaurant to company
 	fee gas_price_per_km * order_distance from driver to gas
-	define delivery_fee as fee 0.2 * order_distance from consumer to driver
+	define delivery_fee as fee 0.5 * order_distance from consumer to driver
 	define service_fee as fee 1 from consumer to company
 	fee 0.07 * delivery_fee from consumer to government
 	fee 0.07 * service_fee from consumer to government

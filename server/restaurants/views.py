@@ -9,9 +9,9 @@ from restaurants.models import Restaurant
 from menus.models import Menu, MenuItem
 from geo.models import UserAddress, Location
 
-from rest_framework import serializers
+from geo.utils import geocode
 
-from geographic.interface import GeographicInterface
+from rest_framework import serializers
 
 def create(request):
     data = json.loads(request.body)
@@ -26,8 +26,7 @@ def create(request):
         return JsonResponse({'detail' : 'Invalid address.'}, status = 400)
     addr = Address(**address)
     addr.save()
-    with GeographicInterface() as inter:
-        latlng = inter.geocode(str(addr))
+    latlng = geocode(addr)
     if not latlng:
         return JsonResponse({'detail' : 'We couldn\'t geocode your address.'}, status = 400)
     location_data = {'latitude' : latlng[0], 'longitude' : latlng[1]}
@@ -63,8 +62,7 @@ def browse(request):
         return JsonResponse({'detail' : 'Invalid address.'}, status = 400)
     addr = Address(**data)
     addr.save()
-    with GeographicInterface() as inter:
-        latlng = inter.geocode(str(addr))
+    latlng = geocode(addr)
     if not latlng:
         return JsonResponse({'detail' : 'We couldn\'t geocode your address.'}, status = 400)
     location_data = {'latitude' : latlng[0], 'longitude' : latlng[1]}

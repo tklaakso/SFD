@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from menus.models import MenuItem
 from common.models import Address
 from restaurants.models import Restaurant
-from geo.models import Location
+from geo.models import Location, Route
 
 import uuid
 
@@ -27,6 +27,7 @@ class Order(models.Model):
     order_time = models.DateTimeField('order time', default = datetime.now)
     address = models.ForeignKey(Address, on_delete = models.CASCADE, blank = True, null = True)
     location = models.ForeignKey(Location, on_delete = models.CASCADE, blank = True, null = True)
+    restaurant_to_destination = models.ForeignKey(Route, on_delete = models.CASCADE, blank = True, null = True)
     placement_date = models.DateTimeField(auto_now_add = True)
 
     def items(self):

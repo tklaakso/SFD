@@ -5,6 +5,7 @@ import time
 import random
 import datetime
 import os
+import sys
 from PIL import Image, ImageTk
 from geographic.interface import GeographicInterface
 from geographic.utils import *
@@ -76,8 +77,9 @@ class Driver:
         start = self.start_pos
         if prev_order_idx != None:
             start = self.orders[prev_order_idx]['data']['destination_node']
-        route1 = interface.route(start, rest)
-        route2 = interface.route(rest, dest)
+        with GeographicInterface() as interface:
+            route1 = interface.route(start, rest)
+            route2 = interface.route(rest, dest)
         delivery_time = get_route_estimated_time(route2, driver_speed)
         t1_start = t1_end - (get_route_estimated_time(route1, driver_speed) + delivery_time)
         if prev_order_idx != None:
@@ -85,7 +87,8 @@ class Driver:
                 return False
         if next_order_idx != None:
             n2, t2_end = self.orders[next_order_idx]['data']['restaurant_node'], self.orders[next_order_idx]['data']['end_time']
-            next_route = interface.route(dest, n2)
+            with GeographicInterface() as interface:
+                next_route = interface.route(dest, n2)
             restaurant_to_destination = self.orders[next_order_idx]['data']['restaurant_to_destination']
             t2_start = t2_end - (get_route_estimated_time(next_route, driver_speed) + get_route_estimated_time(restaurant_to_destination, driver_speed))
             if t2_start < t1_end:
@@ -152,7 +155,7 @@ def animation_loop(window, canvas,xinc,yinc):
     img = ImageTk.PhotoImage(pil_image)
     canvas.create_image(0, 0, image = img, anchor = 'nw')
     list_nodes = list(nodes)
-    drivers = [Driver(driver['name'], node_pos(random.choice(list_nodes)[0])) for driver in selected_drivers]
+    drivers = [Driver(driver['name'], (driver['start_location']['latitude'], driver['start_location']['longitude'])) for driver in selected_drivers]
     driver_balls = []
     #orders = [(node_pos(random.choice(list_nodes)[0]), random.randint(day_begin, day_end)) for _ in range(100)]
     declined_order = True
@@ -183,7 +186,7 @@ def animation_loop(window, canvas,xinc,yinc):
             day_finished = True
             for driver in drivers:
                 driver.leave()
-            config.print_stats()
+            config.print_stats(len(drivers))
         for i in range(len(drivers)):
             driver = drivers[i]
             ball = driver_balls[i]
@@ -194,7 +197,15 @@ def animation_loop(window, canvas,xinc,yinc):
 
 if __name__ == '__main__':
     config = SimulatorConfig()
-    with open('generation/main.info', 'r') as file:
+    if len(sys.argv) <= 1:
+        print('Usage: python simulate.py [config name]')
+        os._exit(0)
+    config_name = sys.argv[1]
+    config_path = 'generation/' + config_name + '.info'
+    if not os.path.exists(config_path):
+        print('Error: could not find ' + config_path)
+        os._exit(0)
+    with open(config_path, 'r') as file:
         content = file.read()
     config.parse(content)
     ox.config(log_console=True, use_cache=True)
@@ -230,8 +241,6 @@ if __name__ == '__main__':
     animation_ball_radius = 5
     animation_ball_min_movement = 5
     animation_refresh_seconds = 0.01
-    
-    interface = GeographicInterface()
 
     animation_window = create_animation_window()
     animation_canvas = create_animation_canvas(animation_window)

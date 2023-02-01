@@ -89,7 +89,10 @@ class OSMEngine(Engine):
     def random_address(self):
         res = None
         while not (res and self.geocode(res['street_num'] + ' ' + res['street_name'] + ', ' + res['city'] + ', ' + res['province'] + ', ' + res['country'] + ', ' + res['postal_code'])):
-            node = self.nodes[random.choice(self.nodes_list)[0]]
-            latlng = (node['y'] + random.uniform(-0.003, 0.003), node['x'] + random.uniform(-0.003, 0.003))
+            latlng = self.random_node_location()
             res = self.reverse_geocode(latlng)
         return res
+    def random_node_location(self):
+        node = self.nodes[random.choice(self.nodes_list)[0]]
+        latlng = (node['y'] + random.uniform(-0.003, 0.003), node['x'] + random.uniform(-0.003, 0.003))
+        return latlng

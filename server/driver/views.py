@@ -4,17 +4,29 @@ from django.http import JsonResponse
 from rest_framework import serializers
 
 from orders.models import Order
-from .models import Driver
+from .models import Driver, DriverOrder
+from geo.models import Location
 
 from .selection import on_new_driver
 from .selection import lock as selection_lock
 
 import json
 
+class SignupSerializer(serializers.Serializer):
+    latitude = serializers.FloatField(required = True)
+    longitude = serializers.FloatField(required = True)
+
 def signup(request):
+    data = json.loads(request.body)
+    if not SignupSerializer(data = data).is_valid():
+        return JsonResponse({'detail' : 'Validation failed.'}, status = 400)
+    latitude = data.get('latitude')
+    longitude = data.get('longitude')
     if Driver.objects.filter(user = request.user).count() > 0:
         return JsonResponse({'detail' : 'You are already a driver.'}, status = 400)
-    driver = Driver(user = request.user)
+    location = Location(latitude = latitude, longitude = longitude)
+    location.save()
+    driver = Driver(user = request.user, home_location = location)
     driver.save()
     on_new_driver(driver)
     return JsonResponse({'detail' : 'You are now a driver.'})
@@ -39,7 +51,7 @@ def accept(request):
     if not AcceptDeclineSerializer(data = data).is_valid():
         return JsonResponse({'detail' : 'Validation failed.'}, status = 400)
     uuid = data.get('uuid')
-    order = Order.objects.filter(uuid = uuid).first()
+    order = DriverOrder.objects.filter(driver_recommended = driver, order__uuid = uuid).first()
     if not order:
         return JsonResponse({'detail' : 'Order with specified UUID does not exist.'}, status = 400)
     selection_lock.acquire()
@@ -59,7 +71,8 @@ def decline(request):
     if not AcceptDeclineSerializer(data = data).is_valid():
         return JsonResponse({'detail' : 'Validation failed.'}, status = 400)
     uuid = data.get('uuid')
-    order = Order.objects.filter(uuid = uuid).first()
+    query = DriverOrder.objects.filter(order__uuid = uuid)
+    order = (query.filter(driver_recommended = driver) | query.filter(driver_accepted = driver)).first()
     if not order:
         return JsonResponse({'detail' : 'Order with specified UUID does not exist.'}, status = 400)
     selection_lock.acquire()

@@ -59,8 +59,8 @@ def signup_customer(session, i):
 def signup_merchant(session, i):
     session.post(server_addr + 'accounts/signup/', json = {'username' : 'Merchant' + str(i), 'password' : 'password'}, headers = {'X-CSRFToken' : session.cookies['csrftoken']})
 
-def driver_signup(session):
-    session.post(server_addr + 'driver/signup/', headers = {'X-CSRFToken' : session.cookies['csrftoken']})
+def driver_signup(session, location):
+    session.post(server_addr + 'driver/signup/', json = location, headers = {'X-CSRFToken' : session.cookies['csrftoken']})
 
 def delete_account(session):
     session.post(server_addr + 'accounts/delete/', json = {'password' : 'password'}, headers = {'X-CSRFToken' : session.cookies['csrftoken']})
@@ -70,10 +70,12 @@ def reset_simulator(session, data):
     return response.json()
 
 def generate_driver(i):
+    with GeographicInterface() as inter:
+        location = inter.random_node_location()
     session = new_session()
     signup_driver(session, i)
     login_driver(session, i)
-    driver_signup(session)
+    driver_signup(session, {'latitude' : location[0], 'longitude' : location[1]})
     logout(session)
 
 def delete_driver(i):
@@ -82,10 +84,12 @@ def delete_driver(i):
     delete_account(session)
 
 def accept_order(session, uuid):
-    session.post(server_addr + 'driver/accept/', json = {'uuid' : uuid}, headers = {'X-CSRFToken' : session.cookies['csrftoken']})
+    response = session.post(server_addr + 'driver/accept/', json = {'uuid' : uuid}, headers = {'X-CSRFToken' : session.cookies['csrftoken']})
+    print(response.json())
 
 def decline_order(session, uuid):
-    session.post(server_addr + 'driver/decline/', json = {'uuid' : uuid}, headers = {'X-CSRFToken' : session.cookies['csrftoken']})
+    response = session.post(server_addr + 'driver/decline/', json = {'uuid' : uuid}, headers = {'X-CSRFToken' : session.cookies['csrftoken']})
+    print(response.json())
 
 def get_recommended(session):
     response = session.get(server_addr + 'driver/recommended/', headers = {'X-CSRFToken' : session.cookies['csrftoken']})
