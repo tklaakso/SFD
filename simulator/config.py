@@ -121,6 +121,7 @@ class SimulatorConfig:
         self.financial_commands = []
         self.required_externals = set()
         self.run_count = 0
+        self.order_distance = 0
     def generate_externals_parser(self):
         externals_parser = Suppress('require') + Word(alphas + '_')
         externals_parser.add_parse_action(External)
@@ -188,12 +189,14 @@ class SimulatorConfig:
         for command in self.externals_commands:
             self.required_externals.add(command.eval())
     def run(self, externals):
+        self.order_distance += externals['order_distance']
         self.run_count += 1
         state_dict = dict(self.state, **{k : v for k, v in externals.items() if k in self.required_externals})
         for command in self.financial_commands:
             command.eval(state_dict, self.entities)
     def print_stats(self, num_drivers):
         print('Number of orders: ' + str(self.run_count))
+        print('Average order distance: ' + str(self.order_distance / self.run_count))
         padding = max(len(x) for x in self.entities.keys()) + 5
         print('')
         print('Total revenue:')

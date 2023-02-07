@@ -13,6 +13,39 @@ from geographic.utils import geographical_distance, distance_to_time
 update_lock = threading.Lock()
 lock = threading.Lock()
 
+def get_bounding_orders(driver, order):
+    schedule = driver.get_schedule()
+    previous_order = None
+    next_order = None
+    for i in range(len(schedule)):
+        item = schedule[i]
+        if item['end_time'] < order.order_time:
+            previous_order = item
+        else:
+            next_order = item
+            break
+    return previous_order, next_order
+
+def distance_heuristic(prev_order, order, next_order, driver):
+    value = 0
+    next_order_bias = None
+    starting_point = driver.home_location
+    if prev_order:
+        starting_point = prev_order.location
+    order_restaurant = order.restaurants.first().location
+    order_destination = order.location
+    starting_point_latlng = (starting_point.latitude, starting_point.longitude)
+    order_restaurant_latlng = (order_restaurant.latitude, order_restaurant.longitude)
+    order_destination_latlng = (order_destination.latitude, order_destination.longitude)
+    if next_order:
+        next_restaurant = next_order.restaurants.first().location
+        next_restaurant_latlng = (next_restaurant.latitude, next_restaurant.longitude)
+        next_order_bias = geographical_distance(order_destination_latlng, next_restaurant_latlng) - geographical_distance(starting_point_latlng, next_restaurant_latlng)
+        value += next_order_bias
+    value += geographical_distance(starting_point_latlng, order_restaurant_latlng)
+    value += geographical_distance(order_restaurant_latlng, order_destination_latlng)
+    return value, next_order_bias
+
 def update(modified_order = None, modified_driver = None):
     update_lock.acquire()
     active = Order.objects.filter(active = True)
@@ -22,18 +55,15 @@ def update(modified_order = None, modified_driver = None):
         )
     )).filter(driver_recommended_accepted_count = 0).distinct()
     for order in ([modified_order.order] if modified_order else query):
-        drivers = Driver.objects.filter(active = True).exclude(declined__order__in = [order]).annotate(num_accepted = Count('accepted'), num_recommended = Count('recommended')).order_by('num_accepted', 'num_recommended')
-        for driver in ([modified_driver] if modified_driver else drivers):
-            schedule = driver.get_schedule()
-            previous_order = None
-            next_order = None
-            for i in range(len(schedule)):
-                item = schedule[i]
-                if item['end_time'] < order.order_time:
-                    previous_order = item
-                else:
-                    next_order = item
-                    break
+        drivers = [modified_driver] if modified_driver else list(Driver.objects.filter(active = True).exclude(declined__order__in = [order]).annotate(num_accepted = Count('accepted'), num_recommended = Count('recommended')).order_by('num_accepted', 'num_recommended'))
+        bounding_orders = [get_bounding_orders(driver, order) for driver in drivers]
+        heuristics = [distance_heuristic(bounding_orders[i][0]['order'].order if bounding_orders[i][0] else None, order, bounding_orders[i][1]['order'].order if bounding_orders[i][1] else None, drivers[i]) for i in range(len(drivers))]
+        biases = [bias for value, bias in heuristics if bias != None]
+        average_bias = sum(biases) / max(1, len(biases))
+        heuristic_dict = {driver: (heuristic[0] + average_bias if heuristic[1] == None else heuristic[0]) for driver, heuristic in zip(drivers, heuristics)}
+        drivers, bounding_orders = zip(*list(sorted(zip(drivers, bounding_orders), key = lambda x: heuristic_dict[x[0]])))
+        for i, driver in enumerate(drivers):
+            previous_order, next_order = bounding_orders[i]
             driver_pos = previous_order['order'].order.location if previous_order else driver.home_location
             driver_latlng = (driver_pos.latitude, driver_pos.longitude)
             current_restaurant_latlng = (order.restaurants.first().location.latitude, order.restaurants.first().location.longitude)

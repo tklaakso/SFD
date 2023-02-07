@@ -1,6 +1,6 @@
 section params
-	drivers 100 sequential
-	orders 1000 randomized
+	drivers 10 sequential
+	orders 100 randomized
 	restaurants all
 
 section externals
