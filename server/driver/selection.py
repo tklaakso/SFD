@@ -49,45 +49,50 @@ def distance_heuristic(prev_order, order, next_order, driver):
 def update(modified_order = None, modified_driver = None):
     update_lock.acquire()
     active = Order.objects.filter(active = True)
-    query = active.annotate(driver_recommended_accepted_count = Count(
-        Case(When(~Q(driverorder__driver_recommended__isnull = True, driverorder__driver_accepted__isnull = True), then = 1),
-            output_field = IntegerField(),
-        )
-    )).filter(driver_recommended_accepted_count = 0).distinct()
-    for order in ([modified_order.order] if modified_order else query):
-        drivers = [modified_driver] if modified_driver else list(Driver.objects.filter(active = True).exclude(declined__order__in = [order]).annotate(num_accepted = Count('accepted'), num_recommended = Count('recommended')).order_by('num_accepted', 'num_recommended'))
-        bounding_orders = [get_bounding_orders(driver, order) for driver in drivers]
-        heuristics = [distance_heuristic(bounding_orders[i][0]['order'].order if bounding_orders[i][0] else None, order, bounding_orders[i][1]['order'].order if bounding_orders[i][1] else None, drivers[i]) for i in range(len(drivers))]
-        biases = [bias for value, bias in heuristics if bias != None]
-        average_bias = sum(biases) / max(1, len(biases))
-        heuristic_dict = {driver: (heuristic[0] + average_bias if heuristic[1] == None else heuristic[0]) for driver, heuristic in zip(drivers, heuristics)}
-        drivers, bounding_orders = zip(*list(sorted(zip(drivers, bounding_orders), key = lambda x: heuristic_dict[x[0]])))
-        for i, driver in enumerate(drivers):
-            previous_order, next_order = bounding_orders[i]
-            driver_pos = previous_order['order'].order.location if previous_order else driver.home_location
-            driver_latlng = (driver_pos.latitude, driver_pos.longitude)
-            current_restaurant_latlng = (order.restaurants.first().location.latitude, order.restaurants.first().location.longitude)
-            order_latlng = (order.location.latitude, order.location.longitude)
-            next_start_time_upper_bound = None
-            if next_order:
-                next_restaurant_latlng = (next_order['order'].order.restaurants.first().location.latitude, next_order['order'].order.restaurants.first().location.longitude)
-                next_start_time_upper_bound = next_order['end_time'] - timedelta(seconds = get_route_estimated_time(next_order['order'].order.restaurant_to_destination) + distance_to_time(geographical_distance(order_latlng, next_restaurant_latlng), 60))
-            current_start_time_upper_bound = order.order_time - timedelta(seconds = get_route_estimated_time(order.restaurant_to_destination) + distance_to_time(geographical_distance(driver_latlng, current_restaurant_latlng), 60))
-            if (next_order and order.order_time > next_start_time_upper_bound) or (previous_order and previous_order['end_time'] > current_start_time_upper_bound):
-                continue
-            driver_to_restaurant = make_route(driver_pos, order.restaurants.first().location)
-            if next_order:
-                next_route = make_route(order.location, next_order['order'].order.restaurants.first().location)
-                next_start_time = next_order['end_time'] - timedelta(seconds = get_route_estimated_time(next_order['order'].order.restaurant_to_destination) + get_route_estimated_time(next_route))
-            driver_order = DriverOrder(order = order, driver_to_restaurant = driver_to_restaurant)
-            start_time, end_time = driver_order.get_time_bounds()
-            if (previous_order == None or start_time >= previous_order['end_time']) and (next_order == None or end_time <= next_start_time):
-                driver_order.save()
+    drivers = [modified_driver] if modified_driver else list(Driver.objects.filter(active = True).annotate(num_accepted = Count('accepted'), num_recommended = Count('recommended')).order_by('num_accepted', 'num_recommended'))
+    has_recommended = True
+    while has_recommended:
+        has_recommended = False
+        for driver in drivers:
+            query = active.annotate(driver_recommended_accepted_count = Count(
+                Case(When(~Q(driverorder__driver_recommended__isnull = True, driverorder__driver_accepted__isnull = True), then = 1),
+                    output_field = IntegerField(),
+                )
+            )).exclude(driverorder__driver_declined__in = [driver]).filter(driver_recommended_accepted_count = 0).distinct()
+            orders = [modified_order.order] if modified_order else query
+            bounding_orders = [get_bounding_orders(driver, order) for order in orders]
+            heuristics = [distance_heuristic(bounding_orders[i][0]['order'].order if bounding_orders[i][0] else None, orders[i], bounding_orders[i][1]['order'].order if bounding_orders[i][1] else None, driver) for i in range(len(orders))]
+            biases = [bias for value, bias in heuristics if bias != None]
+            average_bias = sum(biases) / max(1, len(biases))
+            heuristic_dict = {order: (heuristic[0] + average_bias if heuristic[1] == None else heuristic[0]) for order, heuristic in zip(orders, heuristics)}
+            orders, bounding_orders = zip(*list(sorted(zip(orders, bounding_orders), key = lambda x: heuristic_dict[x[0]])))
+            for i, order in enumerate(orders):
+                previous_order, next_order = bounding_orders[i]
+                driver_pos = previous_order['order'].order.location if previous_order else driver.home_location
+                driver_latlng = (driver_pos.latitude, driver_pos.longitude)
+                current_restaurant_latlng = (order.restaurants.first().location.latitude, order.restaurants.first().location.longitude)
+                order_latlng = (order.location.latitude, order.location.longitude)
+                next_start_time_upper_bound = None
                 if next_order:
-                    next_order['order'].driver_to_restaurant = next_route
-                    next_order['order'].save()
-                driver.recommend(driver_order)
-                break
+                    next_restaurant_latlng = (next_order['order'].order.restaurants.first().location.latitude, next_order['order'].order.restaurants.first().location.longitude)
+                    next_start_time_upper_bound = next_order['end_time'] - timedelta(seconds = get_route_estimated_time(next_order['order'].order.restaurant_to_destination) + distance_to_time(geographical_distance(order_latlng, next_restaurant_latlng), 60))
+                current_start_time_upper_bound = order.order_time - timedelta(seconds = get_route_estimated_time(order.restaurant_to_destination) + distance_to_time(geographical_distance(driver_latlng, current_restaurant_latlng), 60))
+                if (next_order and order.order_time > next_start_time_upper_bound) or (previous_order and previous_order['end_time'] > current_start_time_upper_bound):
+                    continue
+                driver_to_restaurant = make_route(driver_pos, order.restaurants.first().location)
+                if next_order:
+                    next_route = make_route(order.location, next_order['order'].order.restaurants.first().location)
+                    next_start_time = next_order['end_time'] - timedelta(seconds = get_route_estimated_time(next_order['order'].order.restaurant_to_destination) + get_route_estimated_time(next_route))
+                driver_order = DriverOrder(order = order, driver_to_restaurant = driver_to_restaurant)
+                start_time, end_time = driver_order.get_time_bounds()
+                if (previous_order == None or start_time >= previous_order['end_time']) and (next_order == None or end_time <= next_start_time):
+                    driver_order.save()
+                    if next_order:
+                        next_order['order'].driver_to_restaurant = next_route
+                        next_order['order'].save()
+                    driver.recommend(driver_order)
+                    has_recommended = True
+                    break
     update_lock.release()
 
 def on_accept_order(driver, order):

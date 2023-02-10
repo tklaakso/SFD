@@ -146,7 +146,7 @@ def create_animation_canvas(window):
     canvas.pack(fill="both", expand=True)
     return canvas
 
-def animation_loop(window, canvas,xinc,yinc):
+def prepare_simulator(canvas):
     simulator_session = new_session()
     response = reset_simulator(simulator_session, config.config)
     selected_drivers = response['info']['drivers']
@@ -154,10 +154,10 @@ def animation_loop(window, canvas,xinc,yinc):
     pil_image = Image.open('graph.png').resize(dim)
     img = ImageTk.PhotoImage(pil_image)
     canvas.create_image(0, 0, image = img, anchor = 'nw')
+    canvas.map_image = img
     list_nodes = list(nodes)
     drivers = [Driver(driver['name'], (driver['start_location']['latitude'], driver['start_location']['longitude'])) for driver in selected_drivers]
     driver_balls = []
-    #orders = [(node_pos(random.choice(list_nodes)[0]), random.randint(day_begin, day_end)) for _ in range(100)]
     declined_order = True
     while declined_order:
         declined_order = False
@@ -165,10 +165,6 @@ def animation_loop(window, canvas,xinc,yinc):
             orders = driver.get_recommended_orders()
             for order in orders:
                 declined_order = declined_order or not driver.offer_order(order)
-    #for order in orders:
-    #    for driver in drivers:
-    #        if driver.offer_order(*order):
-    #            break
     for driver in drivers:
         start_latlng = driver.start_pos
         start_x, start_y = to_screen_coords(bounding_box, dim, start_latlng)
@@ -178,15 +174,18 @@ def animation_loop(window, canvas,xinc,yinc):
                                     start_y + animation_ball_radius,
                                     fill="red", outline="red", width=4)
         driver_balls.append(ball)
+    return time.time(), drivers, driver_balls
+
+def driver_loop(window, canvas, start_time, drivers, driver_balls):
     day_finished = False
-    start_time = time.time()
+    dim = (animation_window_width, animation_window_height)
     while True:
         time_elapsed = day_begin + (time.time() - start_time) * 1000
         if not day_finished and time_elapsed > day_end:
             day_finished = True
             for driver in drivers:
                 driver.leave()
-            config.print_stats(len(drivers))
+            break
         for i in range(len(drivers)):
             driver = drivers[i]
             ball = driver_balls[i]
@@ -242,6 +241,14 @@ if __name__ == '__main__':
     animation_ball_min_movement = 5
     animation_refresh_seconds = 0.01
 
-    animation_window = create_animation_window()
-    animation_canvas = create_animation_canvas(animation_window)
-    animation_loop(animation_window,animation_canvas, animation_ball_min_movement, animation_ball_min_movement)
+    num_drivers = 0
+
+    for _ in range(config.get_day_count()):
+        animation_window = create_animation_window()
+        animation_canvas = create_animation_canvas(animation_window)
+        start_time, drivers, driver_balls = prepare_simulator(animation_canvas)
+        num_drivers = len(drivers)
+        driver_loop(animation_window, animation_canvas, start_time, drivers, driver_balls)
+        animation_window.destroy()
+    
+    config.print_stats(num_drivers)

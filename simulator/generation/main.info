@@ -2,6 +2,7 @@ section params
 	drivers 10 sequential
 	orders 100 randomized
 	restaurants all
+	days 10
 
 section externals
 	require order_price

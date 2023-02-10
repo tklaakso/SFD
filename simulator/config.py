@@ -95,6 +95,12 @@ class SizeParameter:
             data['num'] = self.tokens[1]
         config[self.tokens[0]] = data
 
+class DayCountParameter:
+    def __init__(self, tokens):
+        self.tokens = tokens
+    def apply(self, config):
+        config['day_count'] = self.tokens[0]
+
 class External:
     def __init__(self, tokens):
         self.tokens = tokens
@@ -122,6 +128,10 @@ class SimulatorConfig:
         self.required_externals = set()
         self.run_count = 0
         self.order_distance = 0
+    def get_day_count(self):
+        if 'day_count' in self.config:
+            return self.config['day_count']
+        return 1
     def generate_externals_parser(self):
         externals_parser = Suppress('require') + Word(alphas + '_')
         externals_parser.add_parse_action(External)
@@ -131,7 +141,10 @@ class SimulatorConfig:
         distribution = pyparsing_common.integer + (Keyword('sequential') | Keyword('randomized'))
         size_parameter_parser = groups + (distribution | 'all')
         size_parameter_parser.add_parse_action(SizeParameter)
-        return size_parameter_parser
+        days_parser = Suppress('days') + pyparsing_common.integer
+        days_parser.add_parse_action(DayCountParameter)
+        config_parser = size_parameter_parser | days_parser
+        return config_parser
     def generate_expression_parser(self):
         expr = Forward()
         LPAR, RPAR = map(Suppress, '()')
@@ -207,5 +220,9 @@ class SimulatorConfig:
         for k, v in self.entities.items():
             print('\t' + k + ' ' * (padding - len(k)) + locale.currency(v / self.run_count))
         print('')
-        print('Per driver:')
-        print('\t' + 'driver' + ' ' * (padding - len('driver')) + locale.currency(self.entities['driver'] / num_drivers))
+        print('Daily revenue:')
+        for k, v in self.entities.items():
+            print('\t' + k + ' ' * (padding - len(k)) + locale.currency(v / self.get_day_count()))
+        print('')
+        print('Daily per driver:')
+        print('\t' + 'driver' + ' ' * (padding - len('driver')) + locale.currency(self.entities['driver'] / (self.get_day_count() * num_drivers)))
