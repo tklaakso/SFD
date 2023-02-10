@@ -1,0 +1,23 @@
+section params
+	drivers 10 sequential
+	orders 100 randomized
+	restaurants all
+	days 10
+
+section externals
+	require order_price
+	require order_distance
+
+section finance
+	define gas_price_per_litre as 1.6
+	define gas_litres_per_km as 0.07
+	define gas_price_per_km as gas_price_per_litre * gas_litres_per_km
+	
+	fee 0.25 * order_price from restaurant to company
+	fee 0.1 * order_price from consumer to restaurant
+	fee gas_price_per_km * order_distance from driver to gas
+	define delivery_fee as fee 2.8 from consumer to driver
+	define service_fee as fee 1 from consumer to company
+	fee 0.15 * order_price from consumer to driver
+	fee 0.07 * delivery_fee from consumer to government
+	fee 0.07 * service_fee from consumer to government

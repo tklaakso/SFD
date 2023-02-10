@@ -7,6 +7,7 @@ simulator/**/*.shp
 simulator/**/*.shx
 simulator/**/*.prj
 simulator/cache/**
+simulator/logs/**
 simulator/graph.png
 geographic_service/cache/**
 geographic_service/geographic.egg-info/**

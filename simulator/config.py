@@ -4,6 +4,7 @@ from pyparsing import pyparsing_common
 from pyparsing import Word, alphas, Suppress, Forward, ZeroOrMore, oneOf, Group, Keyword
 from pyparsing.results import ParseResults
 import locale
+import datetime
 
 locale.setlocale(locale.LC_ALL, '')
 
@@ -112,7 +113,8 @@ class External:
         return self.tokens[0]
 
 class SimulatorConfig:
-    def __init__(self):
+    def __init__(self, name):
+        self.name = name
         self.section_parser = Suppress('section') + Word(alphas + '_')
         self.config_parser = self.generate_config_parser()
         self.expression_parser = self.generate_expression_parser()
@@ -182,6 +184,7 @@ class SimulatorConfig:
             sections[current_section_name] = current_section
         return sections
     def parse(self, content):
+        self.simulator_code = content
         lines = list(map(lambda x: x.strip(), content.split('\n')))
         sections = self.parse_sections(lines)
         if 'params' in sections:
@@ -207,22 +210,29 @@ class SimulatorConfig:
         state_dict = dict(self.state, **{k : v for k, v in externals.items() if k in self.required_externals})
         for command in self.financial_commands:
             command.eval(state_dict, self.entities)
-    def print_stats(self, num_drivers):
-        print('Number of orders: ' + str(self.run_count))
-        print('Average order distance: ' + str(self.order_distance / self.run_count))
+    def log_stats(self, num_drivers):
+        stats = 'Number of orders: ' + str(self.run_count) + '\n'
+        stats += 'Average order distance: ' + str(self.order_distance / self.run_count) + '\n'
         padding = max(len(x) for x in self.entities.keys()) + 5
-        print('')
-        print('Total revenue:')
+        stats += '\n'
+        stats += 'Total revenue:\n'
         for k, v in self.entities.items():
-            print('\t' + k + ' ' * (padding - len(k)) + locale.currency(v))
-        print('')
-        print('Orderly revenue:')
+            stats += '\t' + k + ' ' * (padding - len(k)) + locale.currency(v) + '\n'
+        stats += '\n'
+        stats += 'Orderly revenue:\n'
         for k, v in self.entities.items():
-            print('\t' + k + ' ' * (padding - len(k)) + locale.currency(v / self.run_count))
-        print('')
-        print('Daily revenue:')
+            stats += '\t' + k + ' ' * (padding - len(k)) + locale.currency(v / self.run_count) + '\n'
+        stats += '\n'
+        stats += 'Daily revenue:\n'
         for k, v in self.entities.items():
-            print('\t' + k + ' ' * (padding - len(k)) + locale.currency(v / self.get_day_count()))
-        print('')
-        print('Daily per driver:')
-        print('\t' + 'driver' + ' ' * (padding - len('driver')) + locale.currency(self.entities['driver'] / (self.get_day_count() * num_drivers)))
+            stats += '\t' + k + ' ' * (padding - len(k)) + locale.currency(v / self.get_day_count()) + '\n'
+        stats += '\n'
+        stats += 'Daily per driver:\n'
+        stats += '\t' + 'driver' + ' ' * (padding - len('driver')) + locale.currency(self.entities['driver'] / (self.get_day_count() * num_drivers)) + '\n'
+        print(stats)
+        log_file_name = self.name + ' - ' + datetime.datetime.now().strftime('%Y-%m-%d %H %M %S')
+        log_file_path = 'logs/' + log_file_name + '.log'
+        if not os.path.exists('logs'):
+            os.makedirs('logs')
+        with open(log_file_path, 'w') as file:
+            file.write(self.simulator_code + '\n\n--------------------\n\n' + stats)

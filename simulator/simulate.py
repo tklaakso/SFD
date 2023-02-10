@@ -195,11 +195,11 @@ def driver_loop(window, canvas, start_time, drivers, driver_balls):
         time.sleep(animation_refresh_seconds)
 
 if __name__ == '__main__':
-    config = SimulatorConfig()
     if len(sys.argv) <= 1:
         print('Usage: python simulate.py [config name]')
         os._exit(0)
     config_name = sys.argv[1]
+    config = SimulatorConfig(config_name)
     config_path = 'generation/' + config_name + '.info'
     if not os.path.exists(config_path):
         print('Error: could not find ' + config_path)
@@ -251,4 +251,4 @@ if __name__ == '__main__':
         driver_loop(animation_window, animation_canvas, start_time, drivers, driver_balls)
         animation_window.destroy()
     
-    config.print_stats(num_drivers)
+    config.log_stats(num_drivers)
