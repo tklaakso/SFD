@@ -1,2 +1,2 @@
-call activate ox
+call activate simulator
 python run.py maps

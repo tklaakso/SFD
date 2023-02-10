@@ -1,5 +1,3 @@
-cd client
-call npm run build
-cd ../server
+@echo off
 call activate server
 python manage.py runserver
