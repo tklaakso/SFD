@@ -15,7 +15,7 @@ class Engine:
 class GoogleMapsEngine(Engine):
     def __init__(self, place):
         super().__init__(place)
-        self.client = googlemaps.Client(key = 'AIzaSyB-yNql09AeAYM2ys8QYv1RxpUdJFPxgrI')
+        self.client = googlemaps.Client(key = '')
     def route(self, a, b):
         res = []
         dirs = self.client.directions(a, b, mode = 'driving')
