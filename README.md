@@ -1,3 +1,3 @@
 ## SFD (Sudbury Food Delivery)
 
-Until we find a better name...
+Food delivery app infrastructure with web client, server, database and driver simulator components, operating on a real map of Sudbury, ON.
